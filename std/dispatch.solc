@@ -140,7 +140,7 @@ forall payability args rets fn
   , payability:MethodLevelCallvalueCheck
 => function do_exec(ppayability : Proxy(payability), pargs : Proxy(args), prets : Proxy(rets), fn : fn) -> () {
     // check callvalue
-    MethodLevelCallvalueCheck.checkCallvalue(Proxy : Proxy(payability));
+    //MethodLevelCallvalueCheck.checkCallvalue(Proxy : Proxy(payability));
 
     // check we have enough calldata for the head of args
     let hdsz = ABIAttribs.headSize(pargs);
@@ -243,7 +243,7 @@ instance NonPayable:MethodLevelCallvalueCheck {
    function checkCallvalue(prx : Proxy(NonPayable)) -> () {
        assembly {
          if gt(callvalue(), 0) {
-           mstore(0, 0x1);
+           mstore(0, 0x1337);
            revert(0, 32);
          }
        }
