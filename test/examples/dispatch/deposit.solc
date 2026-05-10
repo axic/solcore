@@ -144,12 +144,12 @@ function to_little_endian_64(v: uint256) -> memory(bytes) {
 }
 
 function is_odd(v:uint256) -> bool {
-    let res: bool;
+    let res: word;
     let v_ = Typedef.rep(v);
     assembly {
         res := eq(mod(v_, 2), 1)
     }
-    return res;
+    return tobool(res);
 }
 
 // No constants are supported yet, using this as a workaround.
@@ -260,11 +260,11 @@ contract DepositContract {
     for (let height = uint256(0); height < DEPOSIT_CONTRACT_TREE_DEPTH(); height = height + uint256(1)) {
         //if ((size & 1) == 1) {
         //if ((size % uint256(2)) == uint256(1)) {
-        /*if (is_odd(size)) {
+        if (is_odd(size)) {
             node = sha256(MemoryHelpers.concat(branch[height], node));
         } else {
             node = sha256(MemoryHelpers.concat(node, zero_hashes[height]));
-        }*/
+        }
         size = size / uint256(2);
     }
     return sha256(MemoryHelpers.concat(
@@ -324,7 +324,6 @@ contract DepositContract {
 
     // FIXME: implement checks and updating branch[]
 
-/*
     // Add deposit data root to Merkle tree (update a single `branch` node)
     deposit_count += uint256(1);
     let size = deposit_count;
@@ -339,7 +338,6 @@ contract DepositContract {
         node_ = sha256(MemoryHelpers.concat(branch[height], node_));
         size = size / uint256(2);
     }
-*/
 
     // As the loop should always end prematurely with the `return` statement,
     // this code should be unreachable. We assert `false` just to be safe.
