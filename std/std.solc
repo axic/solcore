@@ -1465,16 +1465,10 @@ class self:StorageType {
 
 instance word:StorageType {
     function load(ptr:word) -> word {
-        let r:word;
-        assembly {
-            r := sload(ptr);
-        }
-        return r;
+        return sload_(ptr);
     }
     function store(ptr:word, value:word) -> () {
-        assembly {
-            sstore(ptr, value)
-        }
+        sstore_(ptr, value);
     }
 }
 
@@ -1485,19 +1479,12 @@ instance address:StorageType {
 
 forall a. a:Typedef(word) =>
 function sloadViaWord(ptr:word) -> a {
-    let r:word;
-    assembly {
-	r := sload(ptr);
-    }
-    return Typedef.abs(r);
+    return Typedef.abs(sload_(ptr));
 }
 
 forall a. a:Typedef(word) =>
 function sstoreViaWord(ptr:word, value:a) -> () {
-    let w: word = Typedef.rep(value);
-    assembly {
-	sstore(ptr, w)
-    }
+    sstore_(ptr, Typedef.rep(value));
 }
 
 instance uint256:StorageType {
