@@ -144,11 +144,16 @@ forall payability args rets fn
 
     // check we have enough calldata for the head of args
     let hdsz = ABIAttribs.headSize(pargs);
+    let cdsz: word;
     assembly {
-        if lt(sub(calldatasize(), 4), hdsz) {
-            revert(0,0);
-        };
+      cdsz := calldatasize()
     }
+    if ((cdsz - 4) < hdsz) {
+      assembly {
+        revert(0, 0)
+      }
+    }
+
 
     // TODO: calldatasize checks for dynamic types
 
