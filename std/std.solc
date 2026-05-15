@@ -99,7 +99,8 @@ export {
   toWord,
   tobool,
   uint256(*),
-  unimplemented
+  unimplemented,
+  zeroize_memory
 };
 
 /*
@@ -697,6 +698,24 @@ function allocate_memory(size : word) -> word {
     let ptr = get_free_memory();
     set_free_memory(Add.add(ptr,size));
     return ptr;
+}
+
+function zeroize_memory(ptr: word, len: word) -> () {
+    assembly {
+        let end_ptr := add(ptr, len)
+
+        // Zero out 32-byte words
+        let words := div(len, 32)
+        for { let i := 0 } lt(i, words) { i := add(i, 1) } {
+            mstore(ptr, 0)
+            ptr := add(ptr, 32)
+        }
+
+        // Zero out trailing bytes
+        for { } lt(ptr, end_ptr) { ptr := add(ptr, 1) } {
+            mstore8(ptr, 0)
+        }
+    }
 }
 
 // --- Indexable Types ---
