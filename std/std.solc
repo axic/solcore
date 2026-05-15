@@ -172,7 +172,7 @@ function revertEmpty() -> () {
 }
 
 // TODO: use bytes4
-data Error = Error(word) | EmptyError; // | ErrorMsg(string);
+data Error = Error(word) | EmptyError | ErrorMsg(string);
 
 // Revert with Error selector.
 function revertWithError(e:Error) -> () {
@@ -185,7 +185,7 @@ function revertWithError(e:Error) -> () {
         | Error.EmptyError => assembly {
             revert(0, 0)
         }
-//        | Error.ErrorMsg(msg) => revert(msg);
+        | Error.ErrorMsg(msg) => revert(msg);
     }
 }
 
