@@ -175,7 +175,7 @@ function revertEmpty() -> () {
 
 // TODO: use bytes4
 // TODO: add Msg(string)
-data Error = Error(word) | Empty;
+data Error = Error(word) | Empty | Msg(memory(bytes));
 
 // Revert with Error selector.
 function revertWithError(e:Error) -> () {
@@ -188,6 +188,11 @@ function revertWithError(e:Error) -> () {
         | Error.Empty => assembly {
             revert(0, 0)
         }
+        | Error.Msg(msg) =>
+            let msg_ = Typedef.rep(msg);
+            assembly {
+                revert(add(msg_, 32), mload(msg_))
+            }
     }
 }
 
