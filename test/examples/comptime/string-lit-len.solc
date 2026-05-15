@@ -1,4 +1,4 @@
-import std;
+import std.{*};
 pragma no-patterson-condition ;
 pragma no-coverage-condition ;
 pragma no-bounded-variable-condition ;
@@ -6,6 +6,6 @@ pragma no-bounded-variable-condition ;
 contract StringLitLen {
   function main() -> word {
     // strlenLit folds to a word
-    return std.strlenLit("hello");
+    return strlenLit("hello");
   }
 }

@@ -1,4 +1,4 @@
-import std;
+import std.{*};
 pragma no-patterson-condition ;
 pragma no-coverage-condition ;
 pragma no-bounded-variable-condition ;
@@ -10,6 +10,6 @@ contract StringLitOps {
     // concat folds to a string literal, enabling revert("...") lowering
     // cannot handle string variables yet
     // let s = concatLit("ab", "cd");
-    std.revert(std.concatLit("ab", "cd"));
+    revert(concatLit("ab", "cd"));
   }
 }
