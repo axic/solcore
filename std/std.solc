@@ -1479,14 +1479,9 @@ instance word:StorageType {
 }
 
 instance address:StorageType {
-    function load(ptr:word) -> address {
-        return Typedef.abs(sload_(ptr)):address; // type annotation needed due to a typechecker bug
-    }
-    function store(ptr:word, value:address) -> () {
-        return sstore_(ptr, Typedef.rep(value));
-    }
+    function load(ptr:word) -> address { return address(StorageType.load(ptr)); }
+    function store(ptr:word, value:address) -> () { StorageType.store(ptr, Typedef.rep(value)); }
 }
-
 
 forall a. a:Typedef(word) =>
 function sloadViaWord(ptr:word) -> a {
@@ -1506,13 +1501,13 @@ function sstoreViaWord(ptr:word, value:a) -> () {
 }
 
 instance uint256:StorageType {
-  function load(ptr:word) -> uint256 { return uint256(StorageType.load(ptr):word); }
-  function store(ptr:word, value:uint256) -> () { StorageType.store(ptr, Typedef.rep(value):word); }
+  function load(ptr:word) -> uint256 { return uint256(StorageType.load(ptr)); }
+  function store(ptr:word, value:uint256) -> () { StorageType.store(ptr, Typedef.rep(value)); }
 }
 
 instance bytes32:StorageType {
-  function load(ptr:word) -> bytes32 { return bytes32(StorageType.load(ptr):word); }
-  function store(ptr:word, value:bytes32) -> () { StorageType.store(ptr, Typedef.rep(value):word); }
+  function load(ptr:word) -> bytes32 { return bytes32(StorageType.load(ptr)); }
+  function store(ptr:word, value:bytes32) -> () { StorageType.store(ptr, Typedef.rep(value)); }
 }
 
 
