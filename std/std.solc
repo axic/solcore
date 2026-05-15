@@ -43,6 +43,7 @@ export {
   allocateDynamicArray,
   address(*),
   allocate_memory,
+  allocate_bytes_array,
   and,
   byte(*),
   bytes,
@@ -742,17 +743,16 @@ forall t . t:Typedef(word) => instance memory(DynArray(t)):IndexAccess(t) {
     }
 }
 
+// Allocate memory in bytes-style, where the first word is the length.
+function allocate_bytes_array(length: word) -> word {
+    let ptr = allocate_memory(length + 32);
+    mstore(ptr, length);
+    return ptr;
+}
+
 forall t . function allocateDynamicArray(prx : Proxy(t), length : word) -> memory(DynArray(t)) {
-    // size of allocation in bytes
-    let sz : word = Mul.mul(Add.add(length, 1), 32);
-
-    // get start of array & increment free by sz
-    let free : word = get_free_memory();
-    set_free_memory(Add.add(free, sz));
-
-    // write array length and return
-    assembly { mstore(free, length) }
-    let res : memory(DynArray(t)) = Typedef.abs(free);
+    let ptr = allocate_bytes_array(length * 32);
+    let res : memory(DynArray(t)) = Typedef.abs(ptr);
     return res;
 }
 
