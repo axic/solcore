@@ -126,6 +126,16 @@ executable sol-core
   ghc-options:
     -O1 -rtsopts
 
+executable sol-core-pp
+  import: common-opts
+  main-is: Main.hs
+  hs-source-dirs:
+      pretty-app
+  build-depends: sol-core
+  build-tool-depends: alex:alex, happy:happy
+  ghc-options:
+    -O1 -rtsopts
+
 executable yule
     import: common-opts
     main-is:          Main.hs
