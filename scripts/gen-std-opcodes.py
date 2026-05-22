@@ -5,13 +5,16 @@ import os
 from string import ascii_lowercase
 
 opcodes = [
-    {"name": "stop",   "inputs": 0, "output": 0},
-    {"name": "add",    "inputs": 2, "output": 1},
-    {"name": "mstore", "inputs": 2, "output": 0},
-    {"name": "mload",  "inputs": 1, "output": 0},
-    {"name": "mcopy",  "inputs": 3, "output": 0},
-    {"name": "sstore", "inputs": 2, "output": 0},
-    {"name": "sload",  "inputs": 2, "output": 1},
+    {"name": "stop",      "inputs": 0, "output": 0},
+    {"name": "add",       "inputs": 2, "output": 1},
+    {"name": "mstore",    "inputs": 2, "output": 0},
+    {"name": "mload",     "inputs": 1, "output": 0},
+    {"name": "mcopy",     "inputs": 3, "output": 0},
+    {"name": "sstore",    "inputs": 2, "output": 0},
+    {"name": "sload",     "inputs": 2, "output": 1},
+    {"name": "keccak256", "inputs": 2, "output": 1},
+    {"name": "callvalue", "inputs": 0, "output": 1},
+    {"name": "revert",    "inputs": 2, "output": 0},
 ]
 
 
@@ -39,7 +42,7 @@ def gen_function(op):
     if op["output"] == 1:
         lines.append("    let res;")
         lines.append("    assembly {")
-        lines.append(f"        res := {name}({call_args})")
+        lines.append(f"        res := {name}({call_args});")
         lines.append("    }")
         lines.append("    return res;")
     else:
