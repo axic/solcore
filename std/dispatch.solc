@@ -1,5 +1,5 @@
 import std.{*};
-import std.opcodes.{callvalue};
+import std.opcodes.{callvalue, calldatasize, calldataload, shr};
 
 export {
   ABIString,
@@ -83,11 +83,8 @@ forall name payability args rets fn
 => instance Method(name,payability,args,rets,fn):Selector {
     function compute(prx : Proxy(Method(name,payability,args,rets,fn))) -> bytes4 {
         // let hash : word = keccakLit(sigStr(prx));
-	let hash = keccakLit(sigStr(Proxy:Proxy(name))  + "(" + sigStr(Proxy:Proxy(args)) + ")");
-	let res : word;
-        assembly { res := shr(224, hash) }
- 	
-        return bytes4(res);
+        let hash = keccakLit(sigStr(Proxy:Proxy(name))  + "(" + sigStr(Proxy:Proxy(args)) + ")");
+        return bytes4(shr(224, hash));
     }
 }
 
@@ -145,10 +142,7 @@ forall payability args rets fn
 
     // check we have enough calldata for the head of args
     let hdsz = ABIAttribs.headSize(pargs);
-    let cdsz;
-    assembly {
-      cdsz := calldatasize()
-    }
+    let cdsz = calldatasize();
     if ((cdsz - 4) < hdsz) {
       let ABIInputTruncated = Error(0x08638556);
       revertWithError(ABIInputTruncated);
@@ -217,10 +211,7 @@ forall n m . n:ExecMethod, n:Selector, m:RunDispatch => instance (n,m):RunDispat
 // Given evidence of a type with a known selector, we can check if it matches the selector in the first four bytes of calldata
 forall ty . ty:Selector => function selector_matches(prx : Proxy(ty)) -> bool {
   let candidate = Typedef.rep(Selector.compute(prx));
-  let selector: word;
-  assembly {
-    selector := shr(224, calldataload(0))
-  }
+  let selector = shr(224, calldataload(0));
   return selector == candidate;
 }
 
@@ -264,10 +255,7 @@ forall methods fallback . methods:RunDispatch, fallback:ExecMethod => instance C
         // TODO: if all methods are non payable then we should life the callvalue check here
 
         // check that we have at least 4 bytes of calldata
-        let cdsz: word;
-        assembly {
-          cdsz := calldatasize()
-        }
+        let cdsz = calldatasize();
         match cdsz < 4 {
           | true =>
             let SelectorTooShort = Error(0x35ffc70e);
