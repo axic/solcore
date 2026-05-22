@@ -5,7 +5,10 @@ export {
     mload,
     mcopy,
     sstore,
-    sload
+    sload,
+    keccak256,
+    callvalue,
+    revert
 };
 
 function stop() -> () {
@@ -17,7 +20,7 @@ function stop() -> () {
 function add(a: word, b: word) -> word {
     let res;
     assembly {
-        res := add(a, b)
+        res := add(a, b);
     }
     return res;
 }
@@ -49,7 +52,29 @@ function sstore(a: word, b: word) -> () {
 function sload(a: word, b: word) -> word {
     let res;
     assembly {
-        res := sload(a, b)
+        res := sload(a, b);
     }
     return res;
+}
+
+function keccak256(a: word, b: word) -> word {
+    let res;
+    assembly {
+        res := keccak256(a, b);
+    }
+    return res;
+}
+
+function callvalue() -> word {
+    let res;
+    assembly {
+        res := callvalue();
+    }
+    return res;
+}
+
+function revert(a: word, b: word) -> () {
+    assembly {
+        revert(a, b)
+    }
 }
