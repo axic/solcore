@@ -11,7 +11,7 @@ opcodes = [
     {"name": "mload",     "inputs": 1, "output": 1},
     {"name": "mcopy",     "inputs": 3, "output": 0},
     {"name": "sstore",    "inputs": 2, "output": 0},
-    {"name": "sload",     "inputs": 2, "output": 1},
+    {"name": "sload",     "inputs": 1, "output": 1},
     {"name": "keccak256", "inputs": 2, "output": 1},
     {"name": "callvalue", "inputs": 0, "output": 1},
     {"name": "revert",    "inputs": 2, "output": 0},
