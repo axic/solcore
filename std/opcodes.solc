@@ -51,10 +51,10 @@ function sstore(a: word, b: word) -> () {
     }
 }
 
-function sload(a: word, b: word) -> word {
+function sload(a: word) -> word {
     let res;
     assembly {
-        res := sload(a, b)
+        res := sload(a)
     }
     return res;
 }
