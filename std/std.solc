@@ -1,3 +1,5 @@
+import std.opcodes.{add, mstore, mload, mcopy};
+
 pragma no-patterson-condition ABIEncode, Num;
 pragma no-coverage-condition ABIDecode, MemoryType;
 
@@ -76,8 +78,8 @@ export {
   maxVal,
   memberAccessBase,
   memory(*),
-  mload,
-  mstore,
+ // mload, // Re-exporting does not work yet
+//  mstore,
   ne,
   not,
   or,
@@ -402,11 +404,7 @@ function gtWord(x:word, y:word) -> bool {
 }
 
 function addWord(l: word, r: word) -> word {
-  let rw : word;
-  assembly {
-      rw := add(l,r);
-  }
-  return rw;
+    return add(l, r);
 }
 
 function subWord(l: word, r: word) -> word {
@@ -754,16 +752,6 @@ data mapping(member, index) = mapping(word) ;
 
 // --- Low-level memory ops
 
-function mload(a:word) -> word {
-  let res: word;
-  assembly { res := mload(a) }
-  return res;
-}
-
-function mstore(a:word, v:word) -> () {
-  assembly { mstore(a,v) }
-}
-
 function strlen(s:memory(string)) -> word {
   match s { | memory(a) => return mload(a); }
 }
@@ -914,7 +902,7 @@ instance MemoryWordReader:WordReader {
     }
     function copyToMem(reader:MemoryWordReader, dst:word, cnt: word) -> () {
         match reader {
-        | MemoryWordReader(ptr) => assembly { mcopy(dst, ptr, cnt) }
+        | MemoryWordReader(ptr) => mcopy(dst, ptr, cnt);
         }
     }
 }
