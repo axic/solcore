@@ -58,6 +58,7 @@ tokens :-
         <0>    "default"                         {simpleToken TDefault}
         <0>    "match"                           {simpleToken TMatch}
         <0>    "function"                        {simpleToken TFunction}
+        <0>    "payable"                         {simpleToken TPayable}
         <0>    "constructor"                     {simpleToken TConstructor}
         <0>    "return"                          {simpleToken TReturn}
         <0>    "leave"                           {simpleToken TLeave}
@@ -186,6 +187,7 @@ data Lexeme
   | TLeave
   | TBreak
   | TFunction
+  | TPayable
   | TConstructor
   | TReturn
   | TLam
@@ -240,6 +242,7 @@ mkIdent (st, _, _, str) len
       "import" -> return $ Token (position st) TImport
       "contract" -> return $ Token (position st) TContract
       "function" -> return $ Token (position st) TFunction
+      "payable" -> return $ Token (position st) TPayable
       "constructor" -> return $ Token (position st) TConstructor
       "return" -> return $ Token (position st) TReturn
       "continue" -> return $ Token (position st) TContinue

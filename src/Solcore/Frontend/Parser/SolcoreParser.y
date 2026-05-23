@@ -46,6 +46,7 @@ import System.FilePath
       'data'     {Token _ TData}
       'match'    {Token _ TMatch}
       'function' {Token _ TFunction}
+      'payable'  {Token _ TPayable}
       'constructor' {Token _ TConstructor}
       'return'   {Token _ TReturn}
       'lam'      {Token _ TLam}
@@ -222,7 +223,11 @@ Signatures : Signature ';' Signatures              {$1 : $3}
            | {- empty -}                           {[]}
 
 Signature :: { Signature }
-Signature : SigPrefix 'function' Name '(' ParamList ')' OptRetTy {Signature (fst $1) (snd $1) $3 $5 $7}
+Signature : SigPrefix OptPayable 'function' Name '(' ParamList ')' OptRetTy {Signature (fst $1) (snd $1) $4 $6 $8 $2}
+
+OptPayable :: { Bool }
+OptPayable : 'payable'                          { True }
+           | {- empty -}                        { False }
 
 SigPrefix :: {([Ty], [Pred])}
 SigPrefix : 'forall' Tyvars '.' ConstraintList '=>' {($2, $4)}

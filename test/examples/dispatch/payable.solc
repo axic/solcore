@@ -1,0 +1,13 @@
+import dispatch;
+
+contract Payable {
+    constructor() {}
+
+    payable function deposit() -> uint256 {
+        return uint256(1);
+    }
+
+    function balance() -> uint256 {
+        return uint256(0);
+    }
+}
