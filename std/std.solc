@@ -85,10 +85,8 @@ export {
   rval,
   set_free_memory,
   slice(*),
-  sloadViaWord,
   sload_,
   sstore_,
-  sstoreViaWord,
   storage(*),
   storeBytesFromMemory,
   string,
@@ -1477,16 +1475,6 @@ instance address:StorageType {
     function store(ptr:word, value:address) -> () { StorageType.store(ptr, Typedef.rep(value)); }
 }
 
-forall a. a:Typedef(word) =>
-function sloadViaWord(ptr:word) -> a {
-    return Typedef.abs(sload_(ptr));
-}
-
-forall a. a:Typedef(word) =>
-function sstoreViaWord(ptr:word, value:a) -> () {
-    sstore_(ptr, Typedef.rep(value));
-}
-
 instance uint256:StorageType {
   function load(ptr:word) -> uint256 { return uint256(StorageType.load(ptr)); }
   function store(ptr:word, value:uint256) -> () { StorageType.store(ptr, Typedef.rep(value)); }
@@ -1496,7 +1484,6 @@ instance bytes32:StorageType {
   function load(ptr:word) -> bytes32 { return bytes32(StorageType.load(ptr)); }
   function store(ptr:word, value:bytes32) -> () { StorageType.store(ptr, Typedef.rep(value)); }
 }
-
 
 // -- structure fields (including contract fields)
 
