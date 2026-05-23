@@ -302,6 +302,7 @@ tcSig (sig, (Forall _ (_ :=> t))) =
           (sigName sig)
           params'
           (Just r)
+          (sigPayable sig)
       )
 
 -- type checking binding groups
