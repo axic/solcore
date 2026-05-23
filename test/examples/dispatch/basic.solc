@@ -4,6 +4,8 @@ contract C {
     constructor() {}
     function nothing() -> () {}
 
+    payable function pay() -> () { }
+
     function something() -> (uint256) {
         return uint256(1);
     }

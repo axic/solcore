@@ -12,6 +12,18 @@
       },
       {
         "input": {
+          "text-calldata": "pay()",
+          "calldata": "1b9265b8",
+          "value": "42"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
 	    "text-calldata": "nothing()",
           "calldata": "448f30a3",
           "value": "0"
