@@ -1789,8 +1789,7 @@ function loadBytesFromStorage(slot:word, memPtr:word) -> word {
             return pos + (notzero * 32);
         | true =>
             // Long byte array
-            mstore(0, slot);
-            let dataPos = keccak256(0, 32);
+            let dataPos = hash1(slot);
             let i = 0;
             for (let x; i < length; i = i + 32) {
                 mstore(pos + i, sload(dataPos));
