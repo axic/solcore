@@ -46,6 +46,7 @@ import Language.Yul
       'data'     {Token _ TData}
       'match'    {Token _ TMatch}
       'function' {Token _ TFunction}
+      'fallback' {Token _ TFallback}
       'constructor' {Token _ TConstructor}
       'return'   {Token _ TReturn}
       'lam'      {Token _ TLam}
@@ -249,6 +250,7 @@ Decl :: { ContractDecl }
 Decl : FieldDef                                    {CFieldDecl $1}
      | DataDef                                     {CDataDecl $1}
      | Function                                    {CFunDecl $1}
+     | Fallback                                    {CFunDecl $1}
      | Constructor                                 {CConstrDecl $1}
 
 -- type synonym
@@ -357,6 +359,16 @@ Function :: { FunDef }
 Function : Signature Body {FunDef $1 $2}
 -- Proposed Rust-style short return, e.g `function d(x) { 2*x }`
          | Signature '{' Expr '}' {FunDef $1 [Return $3]}
+
+-- Fallback declaration: a nameless function. At most one per contract.
+Fallback :: { FunDef }
+Fallback : FallbackSignature Body                  {FunDef $1 $2}
+         | FallbackSignature '{' Expr '}'          {FunDef $1 [Return $3]}
+
+FallbackSignature :: { Signature }
+FallbackSignature
+  : SigPrefix 'fallback' '(' ParamList ')' OptRetTy
+      {Signature (fst $1) (snd $1) (Name "fallback") $4 $6}
 
 OptRetTy :: { Maybe Ty }
 OptRetTy : '->' Type                               {Just $2}

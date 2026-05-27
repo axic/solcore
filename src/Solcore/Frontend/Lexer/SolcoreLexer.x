@@ -61,6 +61,7 @@ tokens :-
         <0>    "default"                         {simpleToken TDefault}
         <0>    "match"                           {simpleToken TMatch}
         <0>    "function"                        {simpleToken TFunction}
+        <0>    "fallback"                        {simpleToken TFallback}
         <0>    "constructor"                     {simpleToken TConstructor}
         <0>    "return"                          {simpleToken TReturn}
         <0>    "leave"                           {simpleToken TLeave}
@@ -192,6 +193,7 @@ data Lexeme
   | TLeave
   | TBreak
   | TFunction
+  | TFallback
   | TConstructor
   | TReturn
   | TLam
@@ -249,6 +251,7 @@ mkIdent (st, _, _, str) len
       "as" -> return $ Token (position st) TAs
       "contract" -> return $ Token (position st) TContract
       "function" -> return $ Token (position st) TFunction
+      "fallback" -> return $ Token (position st) TFallback
       "constructor" -> return $ Token (position st) TConstructor
       "return" -> return $ Token (position st) TReturn
       "continue" -> return $ Token (position st) TContinue
