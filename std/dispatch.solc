@@ -141,9 +141,7 @@ forall payability args rets fn
     MethodLevelCallvalueCheck.checkCallvalue(Proxy : Proxy(payability));
 
     // check we have enough calldata for the head of args
-    let hdsz = ABIAttribs.headSize(pargs);
-    let cdsz = calldatasize();
-    if ((cdsz - 4) < hdsz) {
+    if ((calldatasize() - 4) < ABIAttribs.headSize(pargs)) {
       let ABIInputTruncated = Error(0x08638556);
       revertWithError(ABIInputTruncated);
     }
@@ -231,8 +229,7 @@ instance Payable:MethodLevelCallvalueCheck {
 // NonPayable methods revert if passed value
 instance NonPayable:MethodLevelCallvalueCheck {
    function checkCallvalue(prx : Proxy(NonPayable)) -> () {
-       let value = callvalue();
-       if (value > 0) {
+       if (callvalue() > 0) {
          let NonPayableReceivedValue = Error(0xb5988ea3);
          revertWithError(NonPayableReceivedValue);
        }
@@ -255,8 +252,7 @@ forall methods fallback . methods:RunDispatch, fallback:ExecMethod => instance C
         // TODO: if all methods are non payable then we should life the callvalue check here
 
         // check that we have at least 4 bytes of calldata
-        let cdsz = calldatasize();
-        match cdsz < 4 {
+        match calldatasize() < 4 {
           | true =>
             let SelectorTooShort = Error(0x35ffc70e);
             revertWithError(SelectorTooShort);
