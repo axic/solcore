@@ -67,16 +67,8 @@ genMainFn addMain (Contract cname tys cdecls)
     defaultConstructor = CConstrDecl (Constructor {constrParams = [], constrBody = []})
     mainfn = FunDef (Signature [] [] "main" [] (Just unit)) body
     body = [StmtExp (Call Nothing (QualName "RunContract" "exec") [cdata])]
-    cdata = Con "Contract" [methods, fallback]
+    cdata = Con "Contract" [methods]
     methods = tupleExpFromList (fmap mkMethod (mapMaybe unwrapSigs cdecls))
-    fallback =
-      Con
-        "Fallback"
-        [ proxyExp (TyCon "NonPayable" []),
-          proxyExp unit,
-          proxyExp unit,
-          Var "fallback_default_implementation"
-        ]
 
     mkMethod (Signature _ _ fname fargs (Just ret))
       | all isTyped fargs =

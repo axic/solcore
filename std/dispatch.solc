@@ -25,9 +25,10 @@ pragma no-bounded-variable-condition ;
 
 // --- Core Data Types ---
 
-// A contract contains a tuple of methods and a single fallback
-// TODO: implement receive()
-data Contract(methods, fallback) = Contract(methods,fallback);
+// A contract contains a tuple of methods. If no method selector matches at
+// runtime, `fallback_default_implementation` is invoked.
+// TODO: implement receive() and user-defined fallback
+data Contract(methods) = Contract(methods);
 
 // A method contains an implementation (fn) as well as it's name and type signature
 data Method(name, payability, args, rets, fn) = Method(Proxy(name), Proxy(payability), Proxy(args), Proxy(rets), fn);
@@ -257,11 +258,12 @@ forall c . class c:RunContract {
   function exec(v : c) -> ();
 }
 
-// If we have a dispatch for the contracts methods, and we know how to execute it's fallback, then we can define an entrypoint
-forall methods fallback . methods:RunDispatch, fallback:ExecMethod => instance Contract(methods, fallback):RunContract {
-  function exec(c : Contract(methods, fallback)) -> () {
+// If we have a dispatch for the contracts methods, we can define an entrypoint.
+// When no method selector matches we invoke `fallback_default_implementation`.
+forall methods . methods:RunDispatch => instance Contract(methods):RunContract {
+  function exec(c : Contract(methods)) -> () {
     match c {
-      | Contract(ms, fb) =>
+      | Contract(ms) =>
 
         // TODO: if all methods are non payable then we should life the callvalue check here
 
@@ -282,8 +284,8 @@ forall methods fallback . methods:RunDispatch, fallback:ExecMethod => instance C
 
             // dispatch to method based on selector
             RunDispatch.go(ms);
-            // run fallback if no methods matched
-            ExecMethod.exec(fb);
+            // no method matched: invoke the default fallback (reverts)
+            fallback_default_implementation();
         }
     }
   }
