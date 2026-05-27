@@ -1,0 +1,18 @@
+import std.{*};
+import std.{revert, uint256};
+import std.dispatch.{*};
+pragma no-patterson-condition ;
+pragma no-coverage-condition ;
+pragma no-bounded-variable-condition ;
+
+contract WithFallback {
+  constructor() {}
+
+  function answer() -> uint256 {
+    return uint256(42);
+  }
+
+  fallback() -> () {
+    revert("fallback-was-called");
+  }
+}
