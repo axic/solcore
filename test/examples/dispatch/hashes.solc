@@ -1,0 +1,30 @@
+import std.{*};
+import std.{bytes32, memory, bytes, allocate_memory, mstore, keccak256, sha256, ripemd160};
+import std.dispatch.{*};
+pragma no-patterson-condition ;
+pragma no-coverage-condition ;
+pragma no-bounded-variable-condition ;
+
+// Build a memory(bytes) holding the three-byte string "abc".
+function abcBytes() -> memory(bytes) {
+    let p = allocate_memory(64);
+    mstore(p, 3);
+    mstore(p + 32, 0x6162630000000000000000000000000000000000000000000000000000000000);
+    return memory(p);
+}
+
+contract C {
+    constructor() {}
+
+    function keccakAbc() -> bytes32 {
+        return keccak256(abcBytes());
+    }
+
+    function sha256Abc() -> bytes32 {
+        return sha256(abcBytes());
+    }
+
+    function ripemd160Abc() -> bytes32 {
+        return ripemd160(abcBytes());
+    }
+}

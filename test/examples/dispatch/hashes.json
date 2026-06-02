@@ -1,0 +1,51 @@
+{
+  "hashes": {
+    "bytecode": "",
+    "contract": "C",
+    "tests": [
+      {
+        "input": {
+          "calldata": "",
+          "value": "0"
+        },
+        "kind": "constructor"
+      },
+      {
+        "input": {
+          "text-calldata": "keccakAbc()(bytes32)",
+          "calldata": "f16561d0",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "text-calldata": "sha256Abc()(bytes32)",
+          "calldata": "7fe311dc",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "text-calldata": "ripemd160Abc()(bytes32)",
+          "calldata": "804a3887",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "0000000000000000000000008eb208f7e05d987a9b044a8e98c6b087f15a0bfc",
+          "status": "success"
+        }
+      }
+    ]
+  }
+}
