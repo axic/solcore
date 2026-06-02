@@ -1890,3 +1890,44 @@ forall i a . i:Typedef(word), a:StorageType  =>
 function ridx( m: storage(mapping(i,a)), x:i) -> a {
   return StorageType.load(hash2(Typedef.rep(m), Typedef.rep(x)));
 }
+
+// --- Hashing ---
+
+function keccak256(input: memory(bytes)) -> bytes32 {
+    let ptr : word = Typedef.rep(input);
+    let res : word;
+    assembly {
+        res := keccak256(add(ptr, 32), mload(ptr))
+    }
+    return bytes32(res);
+}
+
+function sha256(input: memory(bytes)) -> bytes32 {
+    let ptr : word = Typedef.rep(input);
+    let res : word;
+    // We assume the [0, 32] scratch space is reserved.
+    // TODO: add specific error code
+    assembly {
+        let ret := staticcall(gas(), 2, add(ptr, 32), mload(ptr), 0, 32)
+        if iszero(ret) {
+            revert(0, 0)
+        }
+        res := mload(0)
+    }
+    return bytes32(res);
+}
+
+function ripemd160(input: memory(bytes)) -> bytes32 {
+    let ptr : word = Typedef.rep(input);
+    let res : word;
+    // We assume the [0, 32] scratch space is reserved.
+    // TODO: add specific error code
+    assembly {
+        let ret := staticcall(gas(), 2, add(ptr, 32), mload(ptr), 0, 32)
+        if iszero(ret) {
+            revert(0, 0)
+        }
+        res := mload(0)
+    }
+    return bytes32(res);
+}
