@@ -349,7 +349,7 @@ declTests =
           "function answer() -> word { return 42; }"
           ( TFunDef
               ( FunDef
-                  (Signature [] [] "answer" [] (Just word))
+                  (Signature [] [] "answer" [] (Just word) False)
                   [Return (lit 42)]
               )
           ),
@@ -359,7 +359,7 @@ declTests =
           "function id(x:word) -> word { return x; }"
           ( TFunDef
               ( FunDef
-                  (Signature [] [] "id" [Typed "x" word] (Just word))
+                  (Signature [] [] "id" [Typed "x" word] (Just word) False)
                   [Return (var "x")]
               )
           ),
@@ -369,7 +369,7 @@ declTests =
           "function answer() -> word { 42 }"
           ( TFunDef
               ( FunDef
-                  (Signature [] [] "answer" [] (Just word))
+                  (Signature [] [] "answer" [] (Just word) False)
                   [Return (lit 42)]
               )
           ),
@@ -385,6 +385,7 @@ declTests =
                       "id"
                       [Typed "x" (TyCon "a" [])]
                       (Just (TyCon "a" []))
+                      False
                   )
                   [Return (var "x")]
               )
@@ -401,6 +402,7 @@ declTests =
                       "eqSelf"
                       [Typed "x" (TyCon "a" [])]
                       (Just bool)
+                      False
                   )
                   [Return (ExpEE (var "x") (var "x"))]
               )
@@ -495,7 +497,7 @@ declTests =
                   []
                   word
                   [ FunDef
-                      (Signature [] [] "eq" [Typed "x" word, Typed "y" word] (Just bool))
+                      (Signature [] [] "eq" [Typed "x" word, Typed "y" word] (Just bool) False)
                       [Return (ExpEE (var "x") (var "y"))]
                   ]
               )
@@ -521,6 +523,7 @@ declTests =
                             Typed "y" (TyCon "pair" [TyCon "a" [], TyCon "a" []])
                           ]
                           (Just bool)
+                          False
                       )
                       [Return (lit 0)]
                   ]
@@ -551,7 +554,7 @@ declTests =
                   []
                   [ CFunDecl
                       ( FunDef
-                          (Signature [] [] "get" [] (Just word))
+                          (Signature [] [] "get" [] (Just word) False)
                           [Return (var "x")]
                       )
                   ]
