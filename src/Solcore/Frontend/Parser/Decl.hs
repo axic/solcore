@@ -256,10 +256,11 @@ fallbackDefAfterPrefix vars ctx = do
 
 fallbackSignatureP :: [Ty] -> [Pred] -> Parser Signature
 fallbackSignatureP vars ctx = do
+  payable <- option False (True <$ keyword "payable")
   keyword "fallback"
   ps <- parens (paramP `sepBy` comma)
   ret <- optional (symbol "->" *> typeP)
-  return (Signature vars ctx (Name "fallback") ps ret)
+  return (Signature vars ctx (Name "fallback") ps ret payable)
 
 -- | One function signature inside a class body.
 -- Commits to requiring ';' once the signature is parsed, so a missing
@@ -309,7 +310,7 @@ contractDeclP =
       <|> withSigPrefix
         ( \vars ctx ->
             CFunDecl
-              <$> (funDefAfterPrefix vars ctx <|> fallbackDefAfterPrefix vars ctx)
+              <$> (try (funDefAfterPrefix vars ctx) <|> fallbackDefAfterPrefix vars ctx)
         )
       <|> CFieldDecl
     <$> fieldDeclP

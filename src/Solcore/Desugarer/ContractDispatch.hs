@@ -87,7 +87,7 @@ genMainFn addMain c@(Contract cname tys cdecls)
       Just (FunDef sig _) ->
         Con
           "Fallback"
-          [ proxyExp (TyCon "NonPayable" []),
+          [ proxyExp (TyCon (if sigPayable sig then "Payable" else "NonPayable") []),
             proxyExp (tupleTyFromList (mapMaybe getTy (sigParams sig))),
             proxyExp (fromMaybe unit (sigReturn sig)),
             Var fallbackName

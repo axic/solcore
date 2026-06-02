@@ -12,7 +12,7 @@ contract WithFallback {
     return uint256(42);
   }
 
-  fallback() -> () {
+  payable fallback() -> () {
     revert("fallback-was-called");
   }
 }
