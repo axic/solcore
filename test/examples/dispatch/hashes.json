@@ -12,8 +12,8 @@
       },
       {
         "input": {
-          "text-calldata": "keccakAbc()(bytes32)",
-          "calldata": "f16561d0",
+          "text-calldata": "keccak()(bytes32)",
+          "calldata": "775dec49",
           "value": "0"
         },
         "kind": "call",
@@ -24,8 +24,8 @@
       },
       {
         "input": {
-          "text-calldata": "sha256Abc()(bytes32)",
-          "calldata": "7fe311dc",
+          "text-calldata": "sha()(bytes32)",
+          "calldata": "65707d6f",
           "value": "0"
         },
         "kind": "call",
@@ -36,8 +36,8 @@
       },
       {
         "input": {
-          "text-calldata": "ripemd160Abc()(bytes32)",
-          "calldata": "804a3887",
+          "text-calldata": "ripemd()(bytes32)",
+          "calldata": "a1e754ea",
           "value": "0"
         },
         "kind": "call",
