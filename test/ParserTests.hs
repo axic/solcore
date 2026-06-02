@@ -461,6 +461,7 @@ declTests =
                       "eq"
                       [Typed "x" (TyCon "a" []), Typed "y" (TyCon "a" [])]
                       (Just bool)
+                      False
                   ]
               )
           ),
@@ -481,6 +482,7 @@ declTests =
                       "cmp"
                       [Typed "x" (TyCon "a" []), Typed "y" (TyCon "a" [])]
                       (Just word)
+                      False
                   ]
               )
           ),
