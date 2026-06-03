@@ -387,13 +387,11 @@ function extcodesize(a: word) -> word {
     return res;
 }
 
-
 function extcodecopy(a: word, b: word, c: word, d: word) -> () {
     assembly {
         extcodecopy(a, b, c, d)
     }
 }
-
 
 function returndatasize() -> word {
     let res;
