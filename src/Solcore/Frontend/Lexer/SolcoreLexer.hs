@@ -59,6 +59,7 @@ reservedWords =
     "assembly",
     "match",
     "function",
+    "public",
     "constructor",
     "return",
     "lam",

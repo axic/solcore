@@ -349,6 +349,7 @@ declTests =
           "function answer() -> word { return 42; }"
           ( TFunDef
               ( FunDef
+                  False
                   (Signature [] [] "answer" [] (Just word))
                   [Return (lit 42)]
               )
@@ -359,6 +360,7 @@ declTests =
           "function id(x:word) -> word { return x; }"
           ( TFunDef
               ( FunDef
+                  False
                   (Signature [] [] "id" [Typed "x" word] (Just word))
                   [Return (var "x")]
               )
@@ -369,6 +371,7 @@ declTests =
           "function answer() -> word { 42 }"
           ( TFunDef
               ( FunDef
+                  False
                   (Signature [] [] "answer" [] (Just word))
                   [Return (lit 42)]
               )
@@ -379,6 +382,7 @@ declTests =
           "forall a. function id(x:a) -> a { return x; }"
           ( TFunDef
               ( FunDef
+                  False
                   ( Signature
                       [TyCon "a" []]
                       []
@@ -395,6 +399,7 @@ declTests =
           "forall a. a:Eq => function eqSelf(x:a) -> bool { return x == x; }"
           ( TFunDef
               ( FunDef
+                  False
                   ( Signature
                       [TyCon "a" []]
                       [InCls "Eq" (TyCon "a" []) []]
@@ -495,6 +500,7 @@ declTests =
                   []
                   word
                   [ FunDef
+                      False
                       (Signature [] [] "eq" [Typed "x" word, Typed "y" word] (Just bool))
                       [Return (ExpEE (var "x") (var "y"))]
                   ]
@@ -513,6 +519,7 @@ declTests =
                   []
                   (TyCon "pair" [TyCon "a" [], TyCon "a" []])
                   [ FunDef
+                      False
                       ( Signature
                           []
                           []
@@ -551,6 +558,24 @@ declTests =
                   []
                   [ CFunDecl
                       ( FunDef
+                          False
+                          (Signature [] [] "get" [] (Just word))
+                          [Return (var "x")]
+                      )
+                  ]
+              )
+          ),
+      testCase "contract with public function" $
+        parsesAs
+          topDeclP
+          "contract C { public function get() -> word { return x; } }"
+          ( TContr
+              ( Contract
+                  "C"
+                  []
+                  [ CFunDecl
+                      ( FunDef
+                          True
                           (Signature [] [] "get" [] (Just word))
                           [Return (var "x")]
                       )

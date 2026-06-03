@@ -243,9 +243,9 @@ extImportedFunDefs fds = do
     generateTopDeclsFor (zip typedFds (map snd nmschs))
 
 typedImportedFunDef :: FunDef Name -> TcM (FunDef Id)
-typedImportedFunDef (FunDef sig _body) = do
+typedImportedFunDef (FunDef p sig _body) = do
   params <- mapM tcParam (sigParams sig)
-  pure (FunDef sig {sigParams = params} [])
+  pure (FunDef p sig {sigParams = params} [])
 
 checkTopDecl :: TopDecl Name -> TcM ()
 checkTopDecl (TClassDef c) =
@@ -256,7 +256,7 @@ checkTopDecl (TDataDef dt) =
   checkDataType dt
 checkTopDecl (TSym s) =
   checkSynonym s
-checkTopDecl (TFunDef (FunDef sig _)) =
+checkTopDecl (TFunDef (FunDef _ sig _)) =
   extSignature sig
 checkTopDecl (TExportDecl _) = pure ()
 checkTopDecl _ = pure ()
@@ -289,7 +289,7 @@ initializeEnv (Contract _ _ cdecls) =
 checkDecl :: ContractDecl Name -> TcM ()
 checkDecl (CDataDecl dt) =
   checkDataType dt
-checkDecl (CFunDecl (FunDef sig _)) =
+checkDecl (CFunDecl (FunDef _ sig _)) =
   extSignature sig
 checkDecl (CFieldDecl fd) =
   tcField fd >> return ()
@@ -381,7 +381,7 @@ tcSig (sig, (Forall _ (_ :=> t))) =
 extractSignatures :: [FunDef Name] -> TcM [(Name, Scheme)]
 extractSignatures fds = forM fds extractSig
   where
-    extractSig (FunDef sig _)
+    extractSig (FunDef _ sig _)
       | hasAnn sig = do
           scheme <- annotatedScheme [] [] sig
           return (sigName sig, scheme)

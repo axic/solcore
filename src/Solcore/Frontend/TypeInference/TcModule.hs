@@ -405,13 +405,15 @@ importedModuleLeafName (Name n) = Name n
 importedModuleLeafName (QualName _ n) = Name n
 
 typedForwardingWrapper :: Name -> FunDef Id -> FunDef Id
-typedForwardingWrapper qualifier (FunDef sig body)
+typedForwardingWrapper qualifier (FunDef isPub sig body)
   | originalName == Name "revert" =
       FunDef
+        isPub
         (sig {sigName = qualifiedName})
         body
   | otherwise =
       FunDef
+        isPub
         (sig {sigName = qualifiedName})
         [Return (Call Nothing targetId args)]
   where
