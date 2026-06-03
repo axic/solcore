@@ -244,8 +244,9 @@ instance Pretty Body where
   ppr = vcat . map ppr
 
 instance Pretty FunDef where
-  ppr (FunDef sig bd) =
-    ppr sig
+  ppr (FunDef isPub sig bd) =
+    (if isPub then text "public" <+> empty else empty)
+      <> ppr sig
       <+> lbrace
       $$ nest 3 (vcat (map ppr bd))
       $$ rbrace
