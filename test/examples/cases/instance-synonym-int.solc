@@ -11,7 +11,7 @@ instance word : Int {
 
 contract C {
 
-  function main () -> W {
+  public function main () -> W {
     let r : W = Int.fromWord(42);
     return r;
   }
