@@ -87,12 +87,26 @@ int main(int argc, char** argv)
 		h160 sender = account(0);
 		h160 contractAddress;
 		unsigned i = 0;
+
+		auto hexPayloadLen = [](std::string const& s) {
+			size_t off = (s.size() >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ? 2 : 0;
+			return s.size() - off;
+		};
+
 		for (auto& test: testdata["tests"])
 		{
 			++i;
 			evmcHost->newBlock();
 			evmc_message message{};
-			bytes input = fromHex(test["input"]["calldata"].get<std::string>());
+			auto const calldataHex = test["input"]["calldata"].get<std::string>();
+			if (hexPayloadLen(calldataHex) % 2 != 0)
+			{
+				std::cerr << "Test " << i << ": calldata has odd-length hex (" << hexPayloadLen(calldataHex) << " nibbles)" << std::endl;
+				resultRecorder.record(filename, "Odd-length hex in calldata.", calldataHex, "", 0, 0);
+				hasTestFailure = true;
+				continue;
+			}
+			bytes input = fromHex(calldataHex);
 			message.sender = EVMHost::convertToEVMC(sender);
 			message.value = EVMHost::convertToEVMC(u256(test["input"]["value"].get<std::string>()));
 			auto kind = test["kind"].get<std::string>();
@@ -174,6 +188,13 @@ int main(int argc, char** argv)
 					}
 				}
 				auto expectedOutput = test["output"]["returndata"].get<std::string>();
+				if (hexPayloadLen(expectedOutput) % 2 != 0)
+				{
+					std::cerr << "Test " << i << ": expected returndata has odd-length hex (" << hexPayloadLen(expectedOutput) << " nibbles)" << std::endl;
+					resultRecorder.record(filename, "Odd-length hex in expected returndata.", expectedOutput, "", gasUsed, gasUsedForDeposit);
+					hasTestFailure = true;
+					continue;
+				}
 				if (output != fromHex(expectedOutput))
 				{
 					std::cerr << "Expected " << expectedOutput << " but got " << toHex(output) << std::endl;
