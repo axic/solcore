@@ -117,6 +117,18 @@
           "returndata":"4924aef0",
           "status": "failure"
         }
+      },
+      {
+        "input": {
+          "text-calldata": "selector matches add2(uint256,uint256) but calldata is too short for abi decode",
+          "calldata":"29fcda330000000000000000000000000000000000000000000000000000000000000002",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata":"4924aef0",
+          "status": "failure"
+        }
       }
     ]
   }
