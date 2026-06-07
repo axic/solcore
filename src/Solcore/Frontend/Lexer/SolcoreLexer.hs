@@ -74,9 +74,16 @@ identifier = lexeme go <?> "identifier"
       h <- letterChar
       t <- many (alphaNumChar <|> char '_')
       let w = h : t
-      if w `elem` reservedWords
-        then fail ("reserved word used as identifier: " ++ w)
-        else pure w
+      if w == "pair"
+        then
+          fail
+            ( "`pair` is reserved as an internal name for tuple desugaring; "
+                ++ "use tuple syntax `(a, b)` instead"
+            )
+        else
+          if w `elem` reservedWords
+            then fail ("reserved word used as identifier: " ++ w)
+            else pure w
 
 integer :: Parser Integer
 integer = lexeme (try hexLit <|> L.decimal) <?> "integer literal"

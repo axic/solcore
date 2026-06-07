@@ -83,7 +83,7 @@ forall a b . a:MemoryType, b:MemoryType => instance (a,b) : MemoryType {
   }
 
   function mstore(aa:word, v: (a,b)) -> () {
-    match v { | pair(va, vb) => mstore2(aa, va, vb); } // match-compiler cannot compile mopre than 1 stmt in a branch :(
+    match v { | (va, vb) => mstore2(aa, va, vb); } // match-compiler cannot compile mopre than 1 stmt in a branch :(
   }
 }
 

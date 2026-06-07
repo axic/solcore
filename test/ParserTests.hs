@@ -55,9 +55,11 @@ typeTests =
     [ testCase "simple named type" $
         parsesAs typeP "word" word,
       testCase "parameterized type" $
-        parsesAs typeP "pair(word, bool)" (TyCon "pair" [word, bool]),
+        parsesAs typeP "Pair(word, bool)" (TyCon "Pair" [word, bool]),
       testCase "two-parameter type" $
         parsesAs typeP "map(word, bool)" (TyCon "map" [word, bool]),
+      testCase "`pair` is reserved as internal name" $
+        parseFails typeP "pair(word, bool)",
       testCase "arrow type" $
         parsesAs typeP "word -> bool" (TyCon "->" [word, bool]),
       testCase "arrow is right-associative" $
@@ -124,6 +126,8 @@ patternTests =
         parsesAs patP "(x)" (Pat "x" []),
       testCase "tuple pattern" $
         parsesAs patP "(x, y)" (Pat "pair" [Pat "x" [], Pat "y" []]),
+      testCase "`pair` is reserved in patterns" $
+        parseFails patP "pair(x, y)",
       testCase "nested constructor" $
         parsesAs patP "Some(Pair(x,y))" (Pat "Some" [Pat "Pair" [Pat "x" [], Pat "y" []]]),
       testCase "dot pattern no args" $
@@ -227,6 +231,8 @@ exprTests =
           expP
           "(a, b)"
           (ExpName Nothing "pair" [var "a", var "b"]),
+      testCase "`pair` is reserved in expressions" $
+        parseFails expP "pair(a, b)",
       testCase "triple expression right-folds" $
         parsesAs
           expP
@@ -507,7 +513,7 @@ declTests =
       testCase "polymorphic instance" $
         parsesAs
           topDeclP
-          "forall a. a:Eq => instance pair(a,a):Eq { function eq(x:pair(a,a), y:pair(a,a)) -> bool { return 0; } }"
+          "forall a. a:Eq => instance (a,a):Eq { function eq(x:(a,a), y:(a,a)) -> bool { return 0; } }"
           ( TInstDef
               ( Instance
                   False
