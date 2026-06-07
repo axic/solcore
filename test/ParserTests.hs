@@ -567,5 +567,7 @@ declTests =
                       )
                   ]
               )
-          )
+          ),
+      testCase "`pair` is reserved as function name" $
+        parseFails topDeclP "function pair(x:word, y:word) -> word { return x; }"
     ]
