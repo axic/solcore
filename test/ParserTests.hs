@@ -363,6 +363,23 @@ declTests =
                   [Return (var "x")]
               )
           ),
+      testCase "function pair with two typed params" $
+        parsesAs
+          topDeclP
+          "function pair(x:word, y:bool) -> pair(word, bool) { return (x, y); }"
+          ( TFunDef
+              ( FunDef
+                  ( Signature
+                      []
+                      []
+                      "pair"
+                      [Typed "x" word, Typed "y" bool]
+                      (Just (pairTy word bool))
+                      False
+                  )
+                  [Return (ExpName Nothing "pair" [var "x", var "y"])]
+              )
+          ),
       testCase "implicit return (single expr body)" $
         parsesAs
           topDeclP
