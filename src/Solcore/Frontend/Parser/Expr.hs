@@ -144,7 +144,10 @@ parenP bp = parens $ do
     [e] -> e
     _ -> foldr1 pairE es
   where
-    pairE e1 e2 = ExpName Nothing (Name "pair") [e1, e2]
+    -- "(,)" is not a valid identifier, so this name cannot collide
+    -- with a user-defined function named "pair". Name resolution
+    -- rewrites it back to the primitive "pair" constructor.
+    pairE e1 e2 = ExpName Nothing (Name "(,)") [e1, e2]
 
 nameP :: BodyP -> Parser Exp
 nameP bp = do

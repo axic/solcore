@@ -401,6 +401,12 @@ instance Resolve S.Pat where
   resolve p@(S.PatDot n ps) = do
     ps' <- resolve ps `wrapError` p
     pure (PCon (dotConstructorMarker n) ps')
+  -- Tuple pattern `(a, b, ...)` is parsed with the magic name "(,)" so it
+  -- cannot be shadowed by a user-defined identifier. Desugar it into the
+  -- nested-pair form directly.
+  resolve p@(S.Pat (Name "(,)") ps) = do
+    ps' <- resolve ps `wrapError` p
+    pure (mkTuplePat ps')
   resolve p@(S.Pat n ps) =
     do
       ps' <- resolve ps `wrapError` p
@@ -608,6 +614,13 @@ instance Resolve S.Exp where
               if hasQualified
                 then unqualifiedConstructorError n
                 else undefinedName n
+  -- Tuple literal `(a, b, ...)` is parsed with the magic name "(,)" so it
+  -- cannot be shadowed by a user-defined function. Rewrite it to the
+  -- primitive `pair` constructor before the normal resolution logic runs.
+  resolve x@(S.ExpName Nothing (Name "(,)") es) =
+    do
+      es' <- resolve es `wrapError` x
+      pure (Con (Name "pair") es')
   resolve x@(S.ExpName me n es) =
     do
       me' <- unwrapQualifierReceiver <$> (resolve me `wrapError` x)

@@ -1,0 +1,7 @@
+import std.{Num,Add,Sub,Eq,Ord,Bounded,Typedef,le};
+
+contract TupleRet {
+    function pair() -> (word, word) {
+        return (1, 2);
+    }
+}

@@ -451,7 +451,8 @@ cases =
       runTestForFile "ltimp.solc" caseFolder,
       runTestExpectingFailure "class-return-type-miss.solc" caseFolder,
       runTestExpectingFailure "catenable-err.solc" caseFolder,
-      runTestForFile "pars.solc" caseFolder
+      runTestForFile "pars.solc" caseFolder,
+      runTestForFile "tuple-return-shadow.solc" caseFolder
     ]
   where
     caseFolder = "./test/examples/cases"

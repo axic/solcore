@@ -44,7 +44,10 @@ parenPatP = parens insideP
       return $ case ps of
         [] -> Pat (Name "()") []
         [p] -> p
-        _ -> Pat (Name "pair") ps
+        -- See note in Parser/Expr.hs#parenP: "(,)" is not a valid
+        -- identifier, so the tuple tag can't collide with a
+        -- user-defined name "pair".
+        _ -> Pat (Name "(,)") ps
 
 namedPatP :: Parser Pat
 namedPatP = do

@@ -351,6 +351,8 @@ parensWhen _ d = d
 
 instance Pretty Exp where
   ppr (Lit l) = ppr l
+  ppr (ExpName Nothing (Name "(,)") es) =
+    parens (commaSep (map ppr es))
   ppr (ExpName me n es) =
     maybe empty (\e -> ppr e <> char '.') me
       <> ppr n
@@ -422,6 +424,8 @@ pprE (Just e) = ppr e <> text "."
 
 instance Pretty Pat where
   ppr (Pat n []) = ppr n
+  ppr (Pat (Name "(,)") ps@(_ : _)) =
+    parens (commaSep $ map ppr ps)
   ppr (Pat n ps@(_ : _))
     | isTuple n = parens (commaSep $ map ppr ps)
     | otherwise = ppr n <> (parens $ commaSep $ map ppr ps)
