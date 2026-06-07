@@ -14,6 +14,7 @@ module Solcore.Desugarer.ContractDispatch
   )
 where
 
+import Data.Generics (everywhere, mkT)
 import Data.List (mapAccumL)
 import Data.Maybe (mapMaybe)
 import Data.Set (Set)
@@ -31,10 +32,50 @@ contractDispatchTopDecls :: [TopDecl Name] -> [TopDecl Name]
 contractDispatchTopDecls topdecls = Set.toList extras <> topdecls'
   where
     (extras, topdecls') = mapAccumL go Set.empty topdecls
-    go acc (TContr c)
-      | "main" `notElem` functionNames c = (Set.union acc (genNameDecls c), TContr (genMainFn True c))
-      | otherwise = (acc, TContr (genMainFn False c))
+    go acc (TContr c) =
+      -- Rename any user-defined `main` so it doesn't collide with the
+      -- dispatcher-generated `main` entry point. The renamed function is
+      -- still picked up as a regular dispatched method.
+      let c' = renameUserMain c
+       in (Set.union acc (genNameDecls c'), TContr (genMainFn True c'))
     go acc v = (acc, v)
+
+-- | Internal name used when the user defines a function called `main`
+-- inside a contract. The original `main` symbol is reserved for the
+-- dispatcher's generated entry point.
+userMainName :: Name
+userMainName = Name "main$user"
+
+-- | If the contract defines a `main` function, rename it (and intra-contract
+-- references to it) so the dispatcher can still generate its own `main` entry
+-- point. Field/type/pattern names are left untouched.
+renameUserMain :: Contract Name -> Contract Name
+renameUserMain c@(Contract cname tys cdecls)
+  | "main" `notElem` functionNames c = c
+  | otherwise = Contract cname tys (map renameDecl cdecls)
+  where
+    renameDecl (CFunDecl (FunDef sig body)) =
+      let sig' =
+            if sigName sig == "main"
+              then sig {sigName = userMainName}
+              else sig
+       in CFunDecl (FunDef sig' (renameInBody body))
+    renameDecl (CConstrDecl (Constructor params body)) =
+      CConstrDecl (Constructor params (renameInBody body))
+    renameDecl (CFieldDecl f) =
+      CFieldDecl (f {fieldInit = fmap renameInExp (fieldInit f)})
+    renameDecl d = d
+
+    renameInBody :: Body Name -> Body Name
+    renameInBody = everywhere (mkT renameExp)
+
+    renameInExp :: Exp Name -> Exp Name
+    renameInExp = everywhere (mkT renameExp)
+
+    renameExp :: Exp Name -> Exp Name
+    renameExp (Var n) | n == Name "main" = Var userMainName
+    renameExp (Call Nothing n args) | n == Name "main" = Call Nothing userMainName args
+    renameExp e = e
 
 hasConstructor :: [ContractDecl Name] -> Bool
 hasConstructor = any isConstr
