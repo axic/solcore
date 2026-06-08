@@ -269,8 +269,7 @@ instance (Pretty a) => Pretty (Body a) where
 
 instance (Pretty a) => Pretty (FunDef a) where
   ppr (FunDef isPub sig bd) =
-    (if isPub then text "public" <+> empty else empty)
-      <> ppr sig
+    ((if isPub then text "public " else empty) <> ppr sig)
       <+> lbrace
       $$ nest 3 (vcat (map ppr bd))
       $$ rbrace
