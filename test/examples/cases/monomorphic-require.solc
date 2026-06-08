@@ -30,7 +30,7 @@ function deposit() -> () {
     return ();
   }
 
-function main() -> () {
+fallback() -> () {
   deposit();
 }
 }
