@@ -31,9 +31,7 @@ contractDispatchTopDecls :: [TopDecl Name] -> [TopDecl Name]
 contractDispatchTopDecls topdecls = Set.toList extras <> topdecls'
   where
     (extras, topdecls') = mapAccumL go Set.empty topdecls
-    go acc (TContr c)
-      | "main" `notElem` functionNames c = (Set.union acc (genNameDecls c), TContr (genMainFn True c))
-      | otherwise = (acc, TContr (genMainFn False c))
+    go acc (TContr c) = (Set.union acc (genNameDecls c), TContr (genMainFn c))
     go acc v = (acc, v)
 
 hasConstructor :: [ContractDecl Name] -> Bool
@@ -50,12 +48,6 @@ fallbackName = Name "fallback"
 isFallback :: FunDef a -> Bool
 isFallback fd = sigName (funSignature fd) == fallbackName
 
-functionNames :: Contract a -> [Name]
-functionNames = foldr go [] . decls
-  where
-    go (CFunDecl fd) = (sigName (funSignature fd) :)
-    go _ = id
-
 -- | Returns the (at most one) user-defined fallback function for a contract.
 findFallback :: Contract a -> Maybe (FunDef a)
 findFallback c = listToMaybe [fd | CFunDecl fd <- decls c, isFallback fd]
@@ -71,10 +63,9 @@ genNameDecls (Contract cname _ cdecls) = foldl go Set.empty cdecls
            in Set.union (Set.fromList [TDataDef dataTy, TInstDef instDef]) acc
     go acc _ = acc
 
-genMainFn :: Bool -> Contract Name -> Contract Name
-genMainFn addMain c@(Contract cname tys cdecls)
-  | addMain = Contract cname tys (CFunDecl mainfn : Set.toList cdecls')
-  | otherwise = Contract cname tys (Set.toList cdecls')
+genMainFn :: Contract Name -> Contract Name
+genMainFn c@(Contract cname tys cdecls) =
+  Contract cname tys (CFunDecl mainfn : Set.toList cdecls')
   where
     cdecls'' = if hasConstructor cdecls then cdecls else cdecls ++ [defaultConstructor]
     cdecls' = Set.unions (map (transformCDecl cname) cdecls'')
