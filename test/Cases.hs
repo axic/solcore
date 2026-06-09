@@ -124,7 +124,8 @@ dispatches =
       runDispatchTest "empty_no_constructor.solc",
       runDispatchTest "generic_product.solc",
       runDispatchTest "generic_sum.solc",
-      runDispatchTest "specialise_sum_of_product.solc"
+      runDispatchTest "specialise_sum_of_product.solc",
+      runDispatchTest "storage_array.solc"
     ]
   where
     runDispatchTest file = runTestForFileWith (emptyOption mempty) file "./test/examples/dispatch"
