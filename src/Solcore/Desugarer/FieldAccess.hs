@@ -247,6 +247,15 @@ indexFun Left {} = (Name "lidx")
 indexFun Right {} = (Name "ridx")
 
 indexAccess :: (HasCallStack) => Either () () -> NmExp -> NmExp -> CEM (Exp Name)
+-- Right-value slice index: `value[Slice(start, end)]` ==> index_slice(value, Slice(start, end)).
+-- Works for any sliceable base (memory value, nested index, …); the base is treated
+-- as a right-value, so this only fires for reads (Right ()), never assignment targets.
+indexAccess (Right ()) exp (Con n args)
+  | leafNameString n == "Slice" =
+      traces ["iA Slice:", pretty exp] $ do
+        exp' <- transRhs exp
+        args' <- traverse transRhs args
+        pure $ Call Nothing (Name "index_slice") [exp', Con n args']
 indexAccess dir exp@(FieldAccess Nothing name) idx = traces ["iA FA: " ++ pretty name ++ " " ++ pretty idx] $ do
   isF <- isField name
   if isF
@@ -266,6 +275,12 @@ indexAccess _dir exp idx = notImplemented "indexAccess" (Indexed exp idx)
 lhsIndex, rhsIndex :: (HasCallStack) => NmExp -> NmExp -> CEM (Exp Name)
 lhsIndex = indexAccess $ Left ()
 rhsIndex = indexAccess $ Right ()
+
+-- The unqualified leaf of a (possibly qualified) name, used to recognise the
+-- `Slice` constructor regardless of how name resolution qualified it.
+leafNameString :: Name -> String
+leafNameString (QualName _ s) = s
+leafNameString (Name s) = s
 
 --------------------------------
 -- # Helpers

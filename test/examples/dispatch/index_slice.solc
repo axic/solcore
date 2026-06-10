@@ -1,0 +1,32 @@
+import std.{*};
+import std.{bytes32, uint256, memory, Typedef, to_bytes, concat, Slice};
+import std.dispatch.{*};
+pragma no-patterson-condition ;
+pragma no-coverage-condition ;
+pragma no-bounded-variable-condition ;
+
+// Dispatch tests for right-value slice index access: `value[Slice(start, end)]`.
+//
+// `value[Slice(start, end)]` desugars (see Desugarer/FieldAccess.hs) to
+// index_slice(value, Slice(start, end)), selecting the half-open byte range
+// [start, end) and yielding a memory_slice. Because memory_slice is itself
+// MemorySize + MemoryPointer + MemoryEncode, the result nests freely with
+// to_bytes / concat and can be indexed again.
+contract C {
+    constructor() {}
+
+    // a[start:end] returned as bytes.
+    function slice_index(a: memory(bytes), start: uint256, end: uint256) -> memory(bytes) {
+        return to_bytes(a[Slice(Typedef.rep(start), Typedef.rep(end))]);
+    }
+
+    // a[start:end] ++ b
+    function slice_index_concat(a: memory(bytes), start: uint256, end: uint256, b: bytes32) -> memory(bytes) {
+        return concat(a[Slice(Typedef.rep(start), Typedef.rep(end))], b);
+    }
+
+    // Nested slice index: (a[s1:e1])[s2:e2] == a[s1+s2 : s1+e2].
+    function slice_nested(a: memory(bytes), s1: uint256, e1: uint256, s2: uint256, e2: uint256) -> memory(bytes) {
+        return to_bytes(a[Slice(Typedef.rep(s1), Typedef.rep(e1))][Slice(Typedef.rep(s2), Typedef.rep(e2))]);
+    }
+}

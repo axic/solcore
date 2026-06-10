@@ -34,6 +34,7 @@ export {
   Proxy(*),
   RVA,
   RValueIdxAccess,
+  Slice(*),
   StorageSize,
   StorageType,
   StructField(*),
@@ -72,6 +73,7 @@ export {
   gtWord,
   hash1,
   hash2,
+  index_slice,
   keccak256_,
   keccakLit,
   le,
@@ -2116,6 +2118,21 @@ function truncate(input: a, end: word) -> memory_slice {
     // TODO: should this allow (it does now) a zero-length slice?
     require(len >= end, Error(0xb4120f14)); // OutOfBounds()
     return memory_slice(MemoryPointer.ptr(input), end);
+}
+
+// A range used as a right-value index: `value[Slice(start, end)]` selects the
+// half-open byte range [start, end) of a memory value, yielding a memory_slice.
+data Slice = Slice(word, word);
+
+// Backing function for `value[Slice(start, end)]` index access (see the index
+// desugaring in Desugarer/FieldAccess.hs). Implemented in terms of slice_ and
+// truncate, so the OutOfBounds() bounds checks (and the underflow revert when
+// end < start) are inherited from them.
+forall a . a:MemorySize, a:MemoryPointer =>
+function index_slice(input: a, range: Slice) -> memory_slice {
+    match range {
+        | Slice(start, end) => return truncate(slice_(input, start), end - start);
+    }
 }
 
 // --- Hashing ---
