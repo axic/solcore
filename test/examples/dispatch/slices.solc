@@ -1,0 +1,54 @@
+import std.{*};
+import std.{bytes32, uint256, memory, Typedef, concat, to_bytes, slice_, truncate};
+import std.dispatch.{*};
+pragma no-patterson-condition ;
+pragma no-coverage-condition ;
+pragma no-bounded-variable-condition ;
+
+// Dispatch tests for memory slicing (slice_/truncate).
+//
+// slice_(input, start)  -> memory_slice over [start, len)   (drops the first `start` bytes)
+// truncate(input, end)  -> memory_slice over [0, end)       (keeps the first `end` bytes)
+//
+// Both operate on anything that is MemorySize + MemoryPointer (e.g. memory(bytes),
+// the result of concat, or another memory_slice), and both return a memory_slice
+// which is itself MemorySize + MemoryPointer + MemoryEncode. That lets us nest them
+// freely and feed the result back into concat / to_bytes for an ABI `bytes` return.
+contract C {
+    constructor() {}
+
+    // Drop the first `start` bytes.
+    function slice_bytes(a: memory(bytes), start: uint256) -> memory(bytes) {
+        return to_bytes(slice_(a, Typedef.rep(start)));
+    }
+
+    // Keep only the first `end` bytes.
+    function truncate_bytes(a: memory(bytes), end: uint256) -> memory(bytes) {
+        return to_bytes(truncate(a, Typedef.rep(end)));
+    }
+
+    // Sub-range [start, start+len): slice_ then truncate.
+    function subrange_bytes(a: memory(bytes), start: uint256, len: uint256) -> memory(bytes) {
+        return to_bytes(truncate(slice_(a, Typedef.rep(start)), Typedef.rep(len)));
+    }
+
+    // Nest slice_ inside slice_: dropping s1 then s2 leaves [s1+s2, len).
+    function slice_of_slice(a: memory(bytes), s1: uint256, s2: uint256) -> memory(bytes) {
+        return to_bytes(slice_(slice_(a, Typedef.rep(s1)), Typedef.rep(s2)));
+    }
+
+    // concat a slice (memory_slice) with a bytes32.
+    function concat_slice_b32(a: memory(bytes), start: uint256, b: bytes32) -> memory(bytes) {
+        return concat(slice_(a, Typedef.rep(start)), b);
+    }
+
+    // concat two slices together.
+    function concat_two_slices(a: memory(bytes), sa: uint256, b: memory(bytes), sb: uint256) -> memory(bytes) {
+        return concat(slice_(a, Typedef.rep(sa)), slice_(b, Typedef.rep(sb)));
+    }
+
+    // truncate the result of a concat: concat(a, b) is itself sliceable.
+    function truncate_concat(a: bytes32, b: bytes32, end: uint256) -> memory(bytes) {
+        return to_bytes(truncate(concat(a, b), Typedef.rep(end)));
+    }
+}
