@@ -139,93 +139,67 @@ int main(int argc, char** argv)
 
 			bool status = result.status_code == EVMC_SUCCESS;
 
+			// Validate the actual (status, output) of a test against an expected
+			// "output" spec ({ "status": ..., "returndata"?: ... }) and record the
+			// result. Returns true on match; on mismatch it records the failure,
+			// flags the run, and returns false so the caller can skip ahead.
+			auto checkExpectedOutput = [&](nlohmann::json const& expected) -> bool {
+				auto expectedStatus = expected["status"].get<std::string>();
+				if (expectedStatus == "failure" && status)
+				{
+					std::cerr << "Expected failure but got success" << std::endl;
+					resultRecorder.record(filename, "Expected test status failure but got success.", "success", expectedStatus, gasUsed, gasUsedForDeposit);
+					hasTestFailure = true;
+					return false;
+				}
+				if (expectedStatus == "success" && !status)
+				{
+					std::cerr << "Expected success but got failure" << std::endl;
+					resultRecorder.record(filename, "Expected test status success but got failure.", "failure", expectedStatus, gasUsed, gasUsedForDeposit);
+					hasTestFailure = true;
+					return false;
+				}
+				if (expected.contains("returndata"))
+				{
+					auto expectedOutput = expected["returndata"].get<std::string>();
+					if (output != fromHex(expectedOutput))
+					{
+						std::cerr << "Expected " << expectedOutput << " but got " << toHex(output) << std::endl;
+						resultRecorder.record(filename, "Expected different output.", toHex(output), expectedOutput, gasUsed, gasUsedForDeposit);
+						hasTestFailure = true;
+						return false;
+					}
+				}
+				resultRecorder.record(filename, "Passed.", toHex(output), expected.value("returndata", std::string("")), gasUsed, gasUsedForDeposit);
+				return true;
+			};
+
 			if (kind == "constructor")
 			{
 				// A constructor test may optionally declare an expected outcome via
-				// an "output" object (status + optional returndata), mirroring "call"
-				// tests. This lets us assert that a non-payable constructor rejects an
-				// incoming value transfer. When "output" is absent, creation is expected
-				// to succeed (backwards compatible with existing test suites).
+				// an "output" object, mirroring "call" tests. This lets us assert that
+				// a non-payable constructor rejects an incoming value transfer. When
+				// "output" is absent, creation is expected to succeed (backwards
+				// compatible with existing test suites).
 				if (test.contains("output"))
 				{
-					auto expectedStatus = test["output"]["status"].get<std::string>();
-					if (expectedStatus == "failure")
-					{
-						if (status)
-						{
-							std::cerr << "Expected creation failure but got success" << std::endl;
-							resultRecorder.record(filename, "Expected constructor status failure but got success.", "success", expectedStatus, gasUsed, gasUsedForDeposit);
-							hasTestFailure = true;
-							continue;
-						}
-					}
-					else if (expectedStatus == "success")
-					{
-						if (!status)
-						{
-							std::cerr << "Expected creation success but got failure" << std::endl;
-							resultRecorder.record(filename, "Expected constructor status success but got failure.", "failure", expectedStatus, gasUsed, gasUsedForDeposit);
-							hasTestFailure = true;
-							continue;
-						}
-					}
-					if (test["output"].contains("returndata"))
-					{
-						auto expectedOutput = test["output"]["returndata"].get<std::string>();
-						if (output != fromHex(expectedOutput))
-						{
-							std::cerr << "Expected " << expectedOutput << " but got " << toHex(output) << std::endl;
-							resultRecorder.record(filename, "Expected different constructor output.", toHex(output), expectedOutput, gasUsed, gasUsedForDeposit);
-							hasTestFailure = true;
-							continue;
-						}
-					}
-					resultRecorder.record(filename, "Passed.", toHex(output), test["output"].value("returndata", std::string("")), gasUsed, gasUsedForDeposit);
-				}
-				else
-				{
-					if (!status)
-					{
-						std::cerr << "Creation failed." << std::endl;
-						resultRecorder.record(filename, "Creation failed for constructor test.", "", "", gasUsed, gasUsedForDeposit);
-						hasTestFailure = true;
+					if (!checkExpectedOutput(test["output"]))
 						continue;
-					}
-					resultRecorder.record(filename, "Creation succeeded.", "", "", gasUsed, gasUsedForDeposit);
 				}
-			}
-			else
-			{
-				auto expectedStatus = test["output"]["status"].get<std::string>();
-				if (expectedStatus == "failure")
+				else if (!status)
 				{
-					if (status)
-					{
-						std::cerr << "Expected failure but got success" << std::endl;
-						resultRecorder.record(filename, "Expected test status failure but got success.", "success", expectedStatus, gasUsed, gasUsedForDeposit);
-						hasTestFailure = true;
-						continue;
-					}
-				}
-				else if (expectedStatus == "success")
-				{
-					if (!status)
-					{
-						std::cerr << "Expected success but got failure" << std::endl;
-						resultRecorder.record(filename, "Expected test status success but got failure.", "failure", expectedStatus, gasUsed, gasUsedForDeposit);
-						hasTestFailure = true;
-						continue;
-					}
-				}
-				auto expectedOutput = test["output"]["returndata"].get<std::string>();
-				if (output != fromHex(expectedOutput))
-				{
-					std::cerr << "Expected " << expectedOutput << " but got " << toHex(output) << std::endl;
-					resultRecorder.record(filename, "Expected different output.", toHex(output), expectedOutput, gasUsed, gasUsedForDeposit);
+					std::cerr << "Creation failed." << std::endl;
+					resultRecorder.record(filename, "Creation failed for constructor test.", "", "", gasUsed, gasUsedForDeposit);
 					hasTestFailure = true;
 					continue;
 				}
-				resultRecorder.record(filename, "Passed.", toHex(output), expectedOutput, gasUsed, gasUsedForDeposit);
+				else
+					resultRecorder.record(filename, "Creation succeeded.", "", "", gasUsed, gasUsedForDeposit);
+			}
+			else
+			{
+				if (!checkExpectedOutput(test["output"]))
+					continue;
 			}
 		}
 		std::cout << "  => " << i << " tests performed." << std::endl;
