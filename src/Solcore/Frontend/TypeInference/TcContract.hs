@@ -420,7 +420,7 @@ generateTopDeclsFor ps =
 -- type checking contract constructors
 
 tcConstructor :: Constructor Name -> TcM (Constructor Id)
-tcConstructor (Constructor ps bd) =
+tcConstructor (Constructor ps bd payable) =
   do
     -- building parameters for constructors
     ps' <- mapM tcParam ps
@@ -428,7 +428,7 @@ tcConstructor (Constructor ps bd) =
         f (Untyped (Id n _)) = ((n,) . monotype) <$> freshTyVar
     lctx <- mapM f ps'
     (bd', _, _) <- withLocalCtx lctx (tcBody bd)
-    pure (Constructor ps' bd')
+    pure (Constructor ps' bd' payable)
 
 -- checking class definitions and adding them to environment
 
