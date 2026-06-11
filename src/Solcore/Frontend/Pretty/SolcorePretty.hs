@@ -161,8 +161,8 @@ instance (Pretty a) => Pretty (ContractDecl a) where
 
 instance (Pretty a) => Pretty (Constructor a) where
   ppr (Constructor ps bd payable) =
-    (if payable then text "payable" <> space else empty)
-      <> text "constructor"
+    (if payable then text "payable" else empty)
+      <+> text "constructor"
       <+> pprParams ps
       <+> lbrace
       $$ nest 3 (vcat (map ppr bd))
