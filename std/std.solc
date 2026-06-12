@@ -42,6 +42,7 @@ export {
   Sub,
   Typedef,
   WordReader,
+  Xor,
   abi_decode,
   abi_encode,
   addWord,
@@ -121,6 +122,7 @@ export {
   tobool,
   uint256(*),
   unimplemented,
+  xorWord,
   zeroize_memory
 };
 
@@ -357,6 +359,10 @@ forall t . class t:Mod {
     function mod(l: t, r: t) -> t;
 }
 
+forall t . class t:Xor {
+    function xor(l: t, r: t) -> t;
+}
+
 forall t . class t:Bounded {
   function minVal() -> t;
   function maxVal() -> t;
@@ -439,6 +445,17 @@ function bshrWord(x: word, y: word) -> word {
     return shr(x, y);
 }
 
+// 2-argument bitwise XOR.
+// Intended to be folded by MastEval when both arguments are
+// statically known word values.
+function xorWord(a : word, b : word) -> word {
+    let res : word;
+    assembly {
+        res := xor(a, b)
+    }
+    return res;
+}
+
 instance word:Eq {
   function eq(x:word, y:word) -> bool {
     return eqWord(x, y);
@@ -470,6 +487,12 @@ function mulWord(l: word, r: word) -> word {
 instance word:Mul {
     function mul(l: word, r: word) -> word {
         return mulWord(l, r);
+    }
+}
+
+instance word:Xor {
+    function xor(l: word, r: word) -> word {
+        return xorWord(l, r);
     }
 }
 
