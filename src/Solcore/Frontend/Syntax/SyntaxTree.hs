@@ -164,7 +164,8 @@ data TySym
 data Constructor
   = Constructor
   { constrParams :: [Param],
-    constrBody :: Body
+    constrBody :: Body,
+    constrPayable :: Bool
   }
   deriving (Eq, Ord, Show, Data, Typeable)
 
@@ -219,7 +220,8 @@ data Field
 
 data FunDef
   = FunDef
-  { funSignature :: Signature,
+  { funIsPublic :: Bool,
+    funSignature :: Signature,
     funDefBody :: Body
   }
   deriving (Eq, Ord, Show, Data, Typeable)

@@ -146,13 +146,13 @@ instance (HasType a) => HasType (Param a) where
   bv (Untyped _ i) = bv i
 
 instance (HasType a) => HasType (FunDef a) where
-  apply s (FunDef sig bd) =
-    FunDef (apply s sig) (apply s bd)
-  fv (FunDef sig bd) =
+  apply s (FunDef p sig bd) =
+    FunDef p (apply s sig) (apply s bd)
+  fv (FunDef _ sig bd) =
     fv sig `union` fv bd
-  mv (FunDef sig bd) =
+  mv (FunDef _ sig bd) =
     mv sig `union` mv bd
-  bv (FunDef sig bd) =
+  bv (FunDef _ sig bd) =
     bv sig `union` bv bd
 
 instance (HasType a) => HasType (Instance a) where
@@ -405,11 +405,11 @@ instance (HasType a) => HasType (Field a) where
   bv (Field _ t me) = bv t `union` bv me
 
 instance (HasType a) => HasType (Constructor a) where
-  apply s (Constructor ps bd) =
-    Constructor (apply s ps) (apply s bd)
-  fv (Constructor ps bd) =
+  apply s (Constructor ps bd payable) =
+    Constructor (apply s ps) (apply s bd) payable
+  fv (Constructor ps bd _) =
     fv ps `union` fv bd
-  mv (Constructor ps bd) =
+  mv (Constructor ps bd _) =
     mv ps `union` mv bd
-  bv (Constructor ps bd) =
+  bv (Constructor ps bd _) =
     bv ps `union` bv bd

@@ -58,8 +58,8 @@ instance Desugar (Contract Name) where
     Contract n vs <$> desugar ds
 
 instance Desugar (FunDef Name) where
-  desugar (FunDef sig bdy) =
-    FunDef sig <$> desugar bdy
+  desugar (FunDef p sig bdy) =
+    FunDef p sig <$> desugar bdy
 
 instance Desugar (ContractDecl Name) where
   desugar (CFieldDecl fd) =
@@ -77,8 +77,8 @@ instance Desugar (Field Name) where
     Field n t <$> desugar me
 
 instance Desugar (Constructor Name) where
-  desugar (Constructor ps bd) =
-    Constructor ps <$> desugar bd
+  desugar (Constructor ps bd payable) =
+    (\bd' -> Constructor ps bd' payable) <$> desugar bd
 
 instance Desugar (Stmt Name) where
   desugar (lhs := rhs) =

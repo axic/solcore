@@ -124,7 +124,7 @@ instance Decl (Signature Name) where
   decl s = [sigName s]
 
 instance Decl (FunDef Name) where
-  decl (FunDef sig _) = decl sig
+  decl (FunDef _ sig _) = decl sig
 
 instance Decl (Contract Name) where
   decl (Contract n _ ds) = n : concatMap decl ds
@@ -217,11 +217,11 @@ instance Names (Signature Name) where
     names ctx `union` names ps `union` names mret
 
 instance Names (FunDef Name) where
-  names (FunDef sig bdy) =
+  names (FunDef _ sig bdy) =
     names sig `union` names bdy
 
 instance Names (Constructor Name) where
-  names (Constructor ps bdy) =
+  names (Constructor ps bdy _) =
     names ps `union` names bdy
 
 instance Names (Class Name) where

@@ -136,8 +136,8 @@ instance Pretty ContractDecl where
     ppr c
 
 instance Pretty Constructor where
-  ppr (Constructor ps bd) =
-    text "constructor"
+  ppr (Constructor ps bd payable) =
+    (if payable then text "payable" <+> text "constructor" else text "constructor")
       <+> pprParams ps
       <+> lbrace
       $$ nest 3 (vcat (map ppr bd))
@@ -244,8 +244,8 @@ instance Pretty Body where
   ppr = vcat . map ppr
 
 instance Pretty FunDef where
-  ppr (FunDef sig bd) =
-    ppr sig
+  ppr (FunDef isPub sig bd) =
+    ((if isPub then text "public " else empty) <> ppr sig)
       <+> lbrace
       $$ nest 3 (vcat (map ppr bd))
       $$ rbrace
