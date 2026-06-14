@@ -1,0 +1,39 @@
+{
+  "bytecode": {
+    "bytecode": "",
+    "contract": "C",
+    "tests": [
+      {
+        "input": {
+          "calldata": "",
+          "value": "0"
+        },
+        "kind": "constructor"
+      },
+      {
+        "input": {
+          "text-calldata": "selfCodeCopyWorks()(uint256)",
+          "calldata": "9e2bbdd7",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "0000000000000000000000000000000000000000000000000000000000000001",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "text-calldata": "copySelfCode()(bytes) -- TODO: paste golden returndata (this contract's runtime code, ABI-encoded as bytes) after a local run; the testrunner prints the actual hex on mismatch",
+          "calldata": "70d2bc9b",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      }
+    ]
+  }
+}

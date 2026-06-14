@@ -1,0 +1,35 @@
+import std.{*};
+import std.opcodes.{address as address_, extcodesize, extcodecopy, codecopy, keccak256, eq};
+import std.dispatch.{*};
+pragma no-patterson-condition ;
+pragma no-coverage-condition ;
+pragma no-bounded-variable-condition ;
+
+contract C {
+    constructor() {}
+
+    // Literal: copy this contract's own runtime code into memory and return it
+    // as bytes. Exercises the 4-argument extcodecopy(addr, dst, offset, size).
+    // The data is laid out after a 32-byte length word (memory(bytes) layout).
+    public function copySelfCode() -> memory(bytes) {
+        let a = address_();
+        let size = extcodesize(a);
+        let ptr = allocate_memory(size + 32);
+        mstore(ptr, size);
+        extcodecopy(a, ptr + 32, 0, size);
+        return memory(ptr);
+    }
+
+    // Oracle: extcodecopy(self) must produce the same bytes as codecopy of the
+    // currently executing runtime code. Returns uint256(1) on success, giving a
+    // deterministic, codegen-independent assertion that extcodecopy works.
+    public function selfCodeCopyWorks() -> uint256 {
+        let a = address_();
+        let size = extcodesize(a);
+        let p1 = allocate_memory(size);
+        let p2 = allocate_memory(size);
+        codecopy(p1, 0, size);
+        extcodecopy(a, p2, 0, size);
+        return uint256(eq(keccak256(p1, size), keccak256(p2, size)));
+    }
+}
