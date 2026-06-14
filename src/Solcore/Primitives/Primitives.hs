@@ -304,8 +304,8 @@ yulPrimOps =
     (Name "chainid", monotype word),
     (Name "selfbalance", monotype word),
     (Name "basefee", monotype word),
-    (Name "blobhash" monotype (word :-> word)),
-    (Name "blobbasefee" monotype word),
+    (Name "blobhash", monotype (word :-> word)),
+    (Name "blobbasefee", monotype word),
     (Name "pop", monotype (word :-> unit)),
     (Name "mload", monotype (word :-> word)),
     (Name "mstore", monotype (word :-> word :-> unit)),
@@ -337,10 +337,10 @@ yulPrimOps =
     (Name "datasize", monotype (string :-> word)),
     (Name "dataoffset", monotype (string :-> word)),
     (Name "datacopy", monotype (word :-> word :-> word :-> unit)),
-    (Name "setimmutable" monotype (word :-> string :-> word)),
-    (Name "loadimmutable" mononotype (string :-> word)),
-    (Name "linkersymbol" monotype (string :-> unit)),
-    (Name "memoryguard", monotype (word :-> word)),
+    (Name "setimmutable", monotype (word :-> string :-> word :-> unit)),
+    (Name "loadimmutable", monotype (string :-> word)),
+    (Name "linkersymbol", monotype (string :-> word)),
+    (Name "memoryguard", monotype (word :-> word))
   ]
 
 words :: Int -> [Ty]
