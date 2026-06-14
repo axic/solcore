@@ -109,17 +109,17 @@ idxOp bp = do
 atomP :: BodyP -> Parser Exp
 atomP bp = litP <|> try typeInfoP <|> try (lamP bp) <|> proxyP <|> try (dotNameP bp) <|> parenP bp <|> nameP bp
 
--- | Parse the `type(C).field` primitive, e.g. `type(Token).publicMethods`.
--- The contract name and field are kept as raw names and interpreted during
--- name resolution / desugaring.
+-- | Parse the `type(C)` / `type(C).field` primitive, e.g. `type(Token)` or
+-- `type(Token).publicMethods`.  The contract name and field are kept as raw
+-- names and interpreted during name resolution / desugaring.  The field is
+-- optional: bare `type(C)` is sugar for `type(C).publicMethods` (the only field
+-- currently supported), so it denotes the contract's public-method proxy.
 typeInfoP :: Parser Exp
 typeInfoP = do
   keyword "type"
   cn <- parens identifier
-  _ <- char '.'
-  sc
-  field <- identifier
-  return (ExpTypeInfo (Name cn) (Name field))
+  mField <- optional (char '.' *> sc *> identifier)
+  return (ExpTypeInfo (Name cn) (maybe (Name "publicMethods") Name mField))
 
 litP :: Parser Exp
 litP =

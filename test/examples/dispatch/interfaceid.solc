@@ -21,7 +21,7 @@ contract InterfaceId {
 
   // TODO: add bytes4 to ABI
   public function interfaceId() -> bytes32 {
-    let id : bytes4 = calculateInterfaceId(type(InterfaceId).publicMethods);
+    let id : bytes4 = calculateInterfaceId(type(InterfaceId));
     return bytes32(Typedef.rep(id));
   }
 }
