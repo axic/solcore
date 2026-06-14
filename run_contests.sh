@@ -19,3 +19,10 @@ bash ./contest.sh test/examples/dispatch/slices.json
 bash ./contest.sh test/examples/dispatch/fallback.json
 bash ./contest.sh test/examples/dispatch/ecrecover.json
 bash ./contest.sh test/examples/dispatch/memory.json
+# bytecode.json exercises extcodecopy. The selfCodeCopyWorks() oracle passes
+# deterministically, but the literal copySelfCode() test ships with an empty
+# placeholder returndata (this contract's runtime code is not known ahead of
+# time). Run it once, paste the hex the testrunner prints into bytecode.json,
+# then enable this line (set -e + testrunner EXIT_FAILURE would abort the suite
+# while the golden is unfilled):
+# bash ./contest.sh test/examples/dispatch/bytecode.json

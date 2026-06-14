@@ -1,0 +1,39 @@
+{
+  "bytecode": {
+    "bytecode": "",
+    "contract": "C",
+    "tests": [
+      {
+        "input": {
+          "calldata": "",
+          "value": "0"
+        },
+        "kind": "constructor"
+      },
+      {
+        "input": {
+          "text-calldata": "selfCodeCopyWorks()(bool)",
+          "calldata": "9e2bbdd7",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "0000000000000000000000000000000000000000000000000000000000000001",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "text-calldata": "copySelfCode()(bytes)",
+          "calldata": "70d2bc9b",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      }
+    ]
+  }
+}

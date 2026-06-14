@@ -1,0 +1,26 @@
+import std.{*};
+import std.opcodes.{address as address_, extcodesize, extcodecopy, codecopy, keccak256, eq};
+import std.dispatch.{*};
+
+contract C {
+    // Ensure that etxcodecopy/codecopy accesses the same.
+    public function selfCodeCopyWorks() -> bool {
+        let a = address_();
+        let size = extcodesize(a);
+        let p1 = allocate_memory(size);
+        let p2 = allocate_memory(size);
+        codecopy(p1, 0, size);
+        extcodecopy(a, p2, 0, size);
+        return tobool(eq(keccak256(p1, size), keccak256(p2, size)));
+    }
+
+    // Copy contract's own runtime code into memory and return it.
+    public function copySelfCode() -> memory(bytes) {
+        let a = address_();
+        let size = extcodesize(a);
+        let ptr = allocate_memory(size + 32);
+        mstore(ptr, size);
+        extcodecopy(a, ptr + 32, 0, size);
+        return memory(ptr);
+    }
+}
