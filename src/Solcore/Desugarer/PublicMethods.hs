@@ -2,12 +2,13 @@
 
 -- |
 -- Module      : Solcore.Desugarer.PublicMethods
--- Description : Implements the `type(C).publicMethods` primitive
+-- Description : Implements the `type(C).publicMethods()` primitive
 --
--- The parser/name-resolver turns `type(C).publicMethods` into a call to a
+-- The parser/name-resolver turns `type(C).publicMethods()` into a call to a
 -- per-contract helper function (see 'publicMethodsTagName').  This pass
 -- generates the body of that helper for every contract whose primitive is
--- actually used.
+-- actually used.  The helper is a function that allocates and builds a fresh
+-- selector array on each call.
 --
 -- The helper builds a runtime @SelectorArray@ (a flat, length-prefixed memory
 -- array; see @std/dispatch.solc@) holding the selector of each public method,
@@ -39,12 +40,12 @@ publicMethodsDesugarer (CompUnit ims topdecls) =
 publicMethodsTopDecls :: [TopDecl Name] -> [TopDecl Name]
 publicMethodsTopDecls topdecls = topdecls ++ helpers
   where
-    -- every contract paired with the helper name its `publicMethods` primitive
-    -- would call
+    -- every contract paired with the helper name its `publicMethods()`
+    -- primitive would call
     contractsByTag =
       [(publicMethodsTagName cname, c) | TContr c@(Contract cname _ _) <- topdecls]
 
-    -- helper names actually referenced by a `type(C).publicMethods` call
+    -- helper names actually referenced by a `type(C).publicMethods()` call
     referenced =
       [fn | Call Nothing fn [] <- listify isTagCall topdecls]
 

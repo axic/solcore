@@ -422,7 +422,7 @@ instance Pretty Exp where
   ppr (ExpAt t) =
     text "@" <> ppr t
   ppr (ExpTypeInfo cn field) =
-    text "type" <> parens (ppr cn) <> char '.' <> ppr field
+    text "type" <> parens (ppr cn) <> char '.' <> ppr field <> text "()"
 
 pprE :: Maybe Exp -> Doc
 pprE Nothing = ""

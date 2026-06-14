@@ -98,7 +98,7 @@ forall name payability args rets fn
 
 // A flat, length-prefixed array of 4-byte selectors held in memory:
 //   [ count | sel_0 | sel_1 | ... ]   (one word per entry)
-// Produced by the `type(C).publicMethods` primitive and consumed by
+// Produced by the `type(C).publicMethods()` primitive and consumed by
 // `calculateInterfaceId`. A dedicated concrete type (rather than the generic
 // `DynArray`) keeps the whole path monomorphic, mirroring how `bytes4` wraps a
 // `word`.
@@ -173,7 +173,7 @@ function xorWord(a : word, b : word) -> word {
 // Compute an ERC-165 style interface id by folding the public-method selectors
 // with XOR. Mirrors Solidity's `type(I).interfaceId`.
 //
-// `methods` is produced by the `type(C).publicMethods` primitive: a runtime
+// `methods` is produced by the `type(C).publicMethods()` primitive: a runtime
 // array holding each public method's 4-byte selector (each computed via
 // `Selector.compute`, which reuses `sigStr`/`SigString`). The XOR fold below is
 // the interface-id calculation, kept in the standard library rather than the

@@ -291,7 +291,7 @@ prepareInferenceDeclsForTypeInference opts emitOutput imps inferenceDecls = do
     putStrLn "Contract field access desugaring:"
     putStrLn $ prettyInferenceDecls accessed
 
-  -- `type(C).publicMethods` primitive: generate the per-contract helper that
+  -- `type(C).publicMethods()` primitive: generate the per-contract helper that
   -- builds the public-method selector array.  Runs BEFORE dispatch generation
   -- so it sees only the user-declared methods (dispatch later injects
   -- `main`/`init_`/deploy helpers, which must NOT count as public methods).

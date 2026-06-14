@@ -109,9 +109,11 @@ idxOp bp = do
 atomP :: BodyP -> Parser Exp
 atomP bp = litP <|> try typeInfoP <|> try (lamP bp) <|> proxyP <|> try (dotNameP bp) <|> parenP bp <|> nameP bp
 
--- | Parse the `type(C).field` primitive, e.g. `type(Token).publicMethods`.
--- The contract name and field are kept as raw names and interpreted during
--- name resolution / desugaring.
+-- | Parse the `type(C).field()` primitive, e.g. `type(Token).publicMethods()`.
+-- The field is a function call: the trailing `()` makes explicit that it
+-- allocates fresh memory on each invocation (e.g. `publicMethods()` builds a
+-- new selector array every time). The contract name and field are kept as raw
+-- names and interpreted during name resolution / desugaring.
 typeInfoP :: Parser Exp
 typeInfoP = do
   keyword "type"
@@ -119,6 +121,7 @@ typeInfoP = do
   _ <- char '.'
   sc
   field <- identifier
+  _ <- parens (pure ())
   return (ExpTypeInfo (Name cn) (Name field))
 
 litP :: Parser Exp

@@ -263,7 +263,7 @@ mkNameInst dt _ = error ("Internal Error: unexpected name type structure: " <> s
 
 -- | The 'Method' type (as used by the dispatcher) for each public,
 -- fully-typed method of a contract, in dispatch order.  Used by the
--- @type(C).publicMethods@ primitive to compute interface ids: each 'Method'
+-- @type(C).publicMethods()@ primitive to compute interface ids: each 'Method'
 -- type has a 'Selector' instance (which reuses 'sigStr'), so the selectors can
 -- be derived from these types without reimplementing any hashing in the
 -- compiler.  The payability and return types are carried faithfully; the
