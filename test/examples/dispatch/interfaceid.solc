@@ -14,15 +14,15 @@ pragma no-bounded-variable-condition ;
 //   interfaceId()  -> 0xa64d0cd4
 //   XOR            -> 0xed9d1481
 contract InterfaceId {
-  function foo(x : uint256) -> uint256 {
+  public function foo(x : uint256) -> uint256 {
     return x;
   }
 
-  function bar(a : address) -> uint256 {
+  public function bar(a : address) -> uint256 {
     return uint256(0);
   }
 
-  function interfaceId() -> uint256 {
+  public function interfaceId() -> uint256 {
     let id : bytes4 = calculateInterfaceId(type(InterfaceId).publicMethods);
     return uint256(Typedef.rep(id));
   }
