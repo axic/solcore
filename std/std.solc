@@ -11,6 +11,8 @@ export {
   ABITuple(*),
   Add,
   Assign,
+  BitAnd,
+  BitOr,
   Bounded,
   CalldataWordReader(*),
   CanStore,
@@ -47,6 +49,7 @@ export {
   abi_encode,
   addWord,
   addmod,
+  andWord,
   allocateDynamicArray,
   address(*),
   allocate_memory,
@@ -94,6 +97,7 @@ export {
   ne,
   not,
   or,
+  orWord,
   out_of_bounds,
   raw_call,
   readStorage,
@@ -363,6 +367,14 @@ forall t . class t:Xor {
     function xor(l: t, r: t) -> t;
 }
 
+forall t . class t:BitAnd {
+    function band(l: t, r: t) -> t;
+}
+
+forall t . class t:BitOr {
+    function bor(l: t, r: t) -> t;
+}
+
 forall t . class t:Bounded {
   function minVal() -> t;
   function maxVal() -> t;
@@ -456,6 +468,28 @@ function xorWord(a : word, b : word) -> word {
     return res;
 }
 
+// 2-argument bitwise AND.
+// Intended to be folded by MastEval when both arguments are
+// statically known word values.
+function andWord(a : word, b : word) -> word {
+    let res : word;
+    assembly {
+        res := and(a, b)
+    }
+    return res;
+}
+
+// 2-argument bitwise OR.
+// Intended to be folded by MastEval when both arguments are
+// statically known word values.
+function orWord(a : word, b : word) -> word {
+    let res : word;
+    assembly {
+        res := or(a, b)
+    }
+    return res;
+}
+
 instance word:Eq {
   function eq(x:word, y:word) -> bool {
     return eqWord(x, y);
@@ -493,6 +527,18 @@ instance word:Mul {
 instance word:Xor {
     function xor(l: word, r: word) -> word {
         return xorWord(l, r);
+    }
+}
+
+instance word:BitAnd {
+    function band(l: word, r: word) -> word {
+        return andWord(l, r);
+    }
+}
+
+instance word:BitOr {
+    function bor(l: word, r: word) -> word {
+        return orWord(l, r);
     }
 }
 
