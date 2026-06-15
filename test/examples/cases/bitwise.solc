@@ -1,0 +1,18 @@
+import std.{*};
+pragma no-patterson-condition ;
+pragma no-coverage-condition ;
+pragma no-bounded-variable-condition ;
+
+// Exercises the `&` / `|` operators, the `&=` / `|=` compound
+// assignments, and the andWord / orWord constant folding.
+function f(x: word, y: word) -> word {
+  let acc : word = x & y;
+  acc |= x;          // acc = (x & y) | x == x
+  acc &= y;          // acc = x & y
+  return acc | 0;    // identity: a | 0 == a
+}
+
+contract Bitwise {
+  // 6 & 3 == 2, | 6 == 6, & 3 == 2, | 0 == 2 — folded at compile time.
+  public function main() -> word { return f(6, 3); }
+}
