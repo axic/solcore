@@ -83,7 +83,9 @@ forall name payability args rets fn
     function compute(prx : Proxy(Method(name,payability,args,rets,fn))) -> bytes4 {
         // let hash : word = keccakLit(sigStr(prx));
         let hash = keccakLit(sigStr(Proxy:Proxy(name))  + "(" + sigStr(Proxy:Proxy(args)) + ")");
-        return bytes4(bshrWord(224, hash));
+        // the selector is the high four bytes of the hash; Typedef.abs takes
+        // that left-aligned word into a bytes4.
+        return Typedef.abs(hash) : bytes4;
     }
 }
 
@@ -232,10 +234,12 @@ forall n m . n:ExecMethod, n:Selector, m:RunDispatch => instance (n,m):RunDispat
 // TODO: we only wanna do the calldataload once
 // Given evidence of a type with a known selector, we can check if it matches the selector in the first four bytes of calldata
 forall ty . ty:Selector => function selector_matches(prx : Proxy(ty)) -> bool {
+  // Typedef.rep yields the selector left-aligned in the high four bytes,
+  // matching how a selector sits in the first four bytes of calldata.
   let candidate = Typedef.rep(Selector.compute(prx));
   let selector: word;
   assembly {
-    selector := shr(224, calldataload(0))
+    selector := shl(224, shr(224, calldataload(0)))
   }
   return selector == candidate;
 }

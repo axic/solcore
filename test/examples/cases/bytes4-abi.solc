@@ -1,0 +1,21 @@
+// bytes4 should behave like Solidity's bytes4: the value is stored
+// right-aligned internally, while its word representation (Typedef.rep) is
+// left-aligned. abi_encode/abi_decode round-trip the value through a
+// left-aligned 32-byte head slot.
+import std.{*};
+
+// Round-trip a bytes4 through ABI encoding and decoding.
+function roundtrip(x: bytes4) -> bytes4 {
+  let encoded : memory(bytes) = abi_encode(x);
+  return abi_decode(encoded, Proxy:Proxy(bytes4), Proxy:Proxy(MemoryWordReader));
+}
+
+contract Bytes4Abi {
+  public function main() -> word {
+    // 0x12345678 held in the low four bytes (right-aligned internal form)
+    let b : bytes4 = bytes4(0x12345678);
+    let r : bytes4 = roundtrip(b);
+    // Typedef.rep exposes the Solidity-style left-aligned word
+    return Typedef.rep(r);
+  }
+}

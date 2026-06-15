@@ -265,6 +265,7 @@ cases =
       runTestForFile "bal.solc" caseFolder,
       runTestExpectingFailure "BadInstance.solc" caseFolder,
       runTestForFile "BoolNot.solc" caseFolder,
+      runTestForFile "bytes4-abi.solc" caseFolder,
       runTestExpectingFailure "bound-minimal.solc" caseFolder,
       runTestExpectingFailure "bound-only-test.solc" caseFolder,
       runTestForFile "bound-merge-case.solc" caseFolder,

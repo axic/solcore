@@ -707,16 +707,21 @@ instance address:Eq {
 
 // --- Bytes4 ---
 
+// A bytes4 holds its four bytes right-aligned in the low 32 bits of the
+// underlying word (the natural "value" form). To behave like Solidity's
+// `bytes4`, the word representation exposed through Typedef is left-aligned
+// (the four bytes occupy the most significant bytes of the word), so that
+// `rep` and `abs` perform the 224-bit shift between the two forms.
 data bytes4 = bytes4(word);
 
 instance bytes4:Typedef(word) {
     function rep(b : bytes4) -> word {
         match b {
-            | bytes4(w) => return w;
+            | bytes4(w) => return bshlWord(224, w);
         }
     }
     function abs(w : word) -> bytes4 {
-        return bytes4(w);
+        return bytes4(bshrWord(224, w));
     }
 }
 
@@ -1139,6 +1144,10 @@ instance address:ABIAttribs {
     function headSize(ty : Proxy(address)) -> word { return 32; }
     function isStatic(ty : Proxy(address)) -> bool { return true; }
 }
+instance bytes4:ABIAttribs {
+    function headSize(ty : Proxy(bytes4)) -> word { return 32; }
+    function isStatic(ty : Proxy(bytes4)) -> bool { return true; }
+}
 forall t . instance DynArray(t):ABIAttribs {
     function headSize(ty : Proxy(DynArray(t))) -> word { return 32; }
     function isStatic(ty : Proxy(DynArray(t))) -> bool { return false; }
@@ -1243,6 +1252,16 @@ instance address:ABIEncode {
 instance bytes32:ABIEncode {
     // a bytes32 is written directly into the head
     function encodeInto(x:bytes32, basePtr:word, offset:word, tail:word) -> word {
+        let repx : word = Typedef.rep(x);
+        mstore(basePtr + offset, repx);
+        return tail;
+    }
+}
+
+instance bytes4:ABIEncode {
+    // a bytes4 is written left-aligned into the head (a full 32-byte slot);
+    // Typedef.rep already produces the left-aligned word.
+    function encodeInto(x:bytes4, basePtr:word, offset:word, tail:word) -> word {
         let repx : word = Typedef.rep(x);
         mstore(basePtr + offset, repx);
         return tail;
@@ -1382,6 +1401,13 @@ forall reader . reader:WordReader => instance ABIDecoder(uint256, reader):ABIDec
 forall reader . reader:WordReader => instance ABIDecoder(bytes32, reader):ABIDecode(bytes32) {
     function decode(ptr:ABIDecoder(bytes32, reader), currentHeadOffset:word) -> bytes32 {
         return Typedef.abs(WordReader.read(WordReader.advance(ptr, currentHeadOffset))) : bytes32;
+    }
+}
+
+// ABI Decoding for bytes4 (left-aligned in a full 32-byte head slot)
+forall reader . reader:WordReader => instance ABIDecoder(bytes4, reader):ABIDecode(bytes4) {
+    function decode(ptr:ABIDecoder(bytes4, reader), currentHeadOffset:word) -> bytes4 {
+        return Typedef.abs(WordReader.read(WordReader.advance(ptr, currentHeadOffset))) : bytes4;
     }
 }
 
