@@ -169,12 +169,12 @@ function log1(v:t, topic:word) -> () {
 }
 
 function unimplemented() -> () {
-  let Unimplemented = Error(bytes4(0x6e128399));
+  let Unimplemented = Error(0x6e128399);
   revertWithError(Unimplemented);
 }
 
 function out_of_bounds() -> () {
-    let OutOfBounds = Error(bytes4(0xb4120f14));
+    let OutOfBounds = Error(0xb4120f14);
     revertWithError(OutOfBounds);
 }
 
@@ -195,15 +195,16 @@ function revertEmpty() -> () {
 }
 
 // TODO: add literal version Msg(string)
-data Error = Error(bytes4) | Empty | Msg(memory(string));
+data Error = Error(word) | Empty | Msg(memory(string));
 
 // Revert with Error selector.
 function revertWithError(e:Error) -> () {
     match e {
         | .Error(selector) =>
-            // Typedef.rep puts the four selector bytes in the leading
-            // (most significant) bytes, just like Solidity's error selectors.
-            let s = Typedef.rep(selector);
+            // the selector is given in the low four bytes; bytes4's rep moves
+            // it into the leading bytes, matching Solidity's error layout, so
+            // we revert the first four bytes.
+            let s = Typedef.rep(bytes4(selector));
             assembly {
                 mstore(0, s)
                 revert(0, 4)
@@ -2181,7 +2182,7 @@ forall a . a:MemorySize, a:MemoryPointer =>
 function slice_(input: a, start: word) -> memory_ref {
     let len = MemorySize.len(input);
     // TODO: should this allow (it does now) a zero-length slice?
-    require(len >= start, Error(bytes4(0xb4120f14))); // OutOfBounds()
+    require(len >= start, Error(0xb4120f14)); // OutOfBounds()
     let ptr_ = MemoryPointer.ptr(input);
     return memory_ref(ptr_ + start, len - start);
 }
@@ -2190,7 +2191,7 @@ forall a . a:MemorySize, a:MemoryPointer =>
 function truncate(input: a, end: word) -> memory_ref {
     let len = MemorySize.len(input);
     // TODO: should this allow (it does now) a zero-length slice?
-    require(len >= end, Error(bytes4(0xb4120f14))); // OutOfBounds()
+    require(len >= end, Error(0xb4120f14)); // OutOfBounds()
     return memory_ref(MemoryPointer.ptr(input), end);
 }
 
@@ -2250,7 +2251,7 @@ function ecrecover(hash: bytes32, v: uint256, r: bytes32, s: bytes32) -> address
     // MalleableSignatureRejected()
     require(
         Typedef.rep(s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
-        Error(bytes4(0x25260b20))
+        Error(0x25260b20)
     );
 
     let hash_ = Typedef.rep(hash);

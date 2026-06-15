@@ -28,7 +28,7 @@ contract Ownable {
   }
 
   public function changeOwner(newOwner : address) -> () {
-    require(caller() == owner, Error(bytes4(0x12b0c500))); // OwnableUnauthorizedAccount()
+    require(caller() == owner, Error(0x12b0c500)); // OwnableUnauthorizedAccount()
     owner = newOwner;
   }
 }

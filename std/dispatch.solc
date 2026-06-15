@@ -163,7 +163,7 @@ forall args rets fn
       cdsz := calldatasize()
     }
     if ((cdsz - 4) < hdsz) {
-      let ABIInputTruncated = Error(bytes4(0x08638556));
+      let ABIInputTruncated = Error(0x08638556);
       revertWithError(ABIInputTruncated);
     }
 
@@ -266,7 +266,7 @@ instance NonPayable:MethodLevelCallvalueCheck {
          value := callvalue()
        }
        if (value > 0) {
-         let NonPayableReceivedValue = Error(bytes4(0xb5988ea3));
+         let NonPayableReceivedValue = Error(0xb5988ea3);
          revertWithError(NonPayableReceivedValue);
        }
    }
@@ -310,6 +310,6 @@ forall methods fb . methods:RunDispatch, fb:ExecMethod => instance Contract(meth
 
 // This is the default fallback used if none is defined.
 function fallback_default_implementation() -> () {
-  let NoSelectorMatchedWithoutFallback = Error(bytes4(0x4924aef0));
+  let NoSelectorMatchedWithoutFallback = Error(0x4924aef0);
   revertWithError(NoSelectorMatchedWithoutFallback);
 }
