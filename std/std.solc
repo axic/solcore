@@ -194,6 +194,7 @@ function revertEmpty() -> () {
   }
 }
 
+// TODO: use bytes4
 // TODO: add literal version Msg(string)
 data Error = Error(word) | Empty | Msg(memory(string));
 
@@ -201,12 +202,10 @@ data Error = Error(word) | Empty | Msg(memory(string));
 function revertWithError(e:Error) -> () {
     match e {
         | .Error(selector) =>
-            // the selector is given in the low four bytes; bytes4's rep moves
-            // it into the leading bytes, matching Solidity's error layout, so
-            // we revert the first four bytes.
-            let s = Typedef.rep(bytes4(selector));
+            // bytes4 ensures the proper memory alignment
+            let selector_ = Typedef.rep(bytes4(selector));
+            mstore(0, selector_);
             assembly {
-                mstore(0, s)
                 revert(0, 4)
             }
         | .Empty => assembly {

@@ -234,15 +234,14 @@ forall n m . n:ExecMethod, n:Selector, m:RunDispatch => instance (n,m):RunDispat
 // TODO: we only wanna do the calldataload once
 // Given evidence of a type with a known selector, we can check if it matches the selector in the first four bytes of calldata
 forall ty . ty:Selector => function selector_matches(prx : Proxy(ty)) -> bool {
+  let candidate = Selector.compute(prx);
   // the selector sits in the high four bytes of calldata; shifting it down
   // gives the right-aligned value held inside the computed bytes4 selector.
   let selector: word;
   assembly {
-    selector := shr(224, calldataload(0))
+    selector := calldataload(0)
   }
-  match Selector.compute(prx) {
-    | bytes4(candidate) => return selector == candidate;
-  }
+  return selector == bytes4(candidate);
 }
 
 // --- Callvalue Checks ---
