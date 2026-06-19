@@ -1,0 +1,211 @@
+{
+  "multisig": {
+    "bytecode": "_CODE",
+    "contract": "Multisig",
+    "tests": [
+      {
+        "input": {
+          "comment": "constructor() - caller becomes the sole signer (count=1, required=1)",
+          "calldata": "",
+          "value": "0"
+        },
+        "kind": "constructor"
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] approve(0) before anything is queued - OperationNotFound, must revert",
+          "calldata": "b759f9540000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "12345678",
+          "status": "failure"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] reject(0) before anything is queued - OperationNotFound, must revert",
+          "calldata": "b8adaa110000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "12345678",
+          "status": "failure"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] queue(AddSigner(0x...dead)) - signer queues an AddSigner op as op 0. TODO: solcore dispatch needs ABIEncode/SigString instances for sum types (Operation); this calldata is the canonical-Solidity-style placeholder for selector keccak256('queue(Operation)')[:4]=4176b43a + Operation tag 0 (AddSigner) + addr argument.",
+          "calldata": "4176b43a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dead",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] approve(0) - the lone signer approves their queued AddSigner. Approvals(0) -> Approvals(1) which meets the required threshold of 1.",
+          "calldata": "b759f9540000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] approve(0) again from the same signer - SignerAlreadyApproved, must revert",
+          "calldata": "b759f9540000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "12345678",
+          "status": "failure"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] execute(0, \"\") - anyone can execute the now-approved AddSigner. After this 0x...dead is signer 1, signers_count=2, nonce=1.",
+          "calldata": "59efcb15000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] queue(AddSigner(0x...cafe)) - signer queues a second AddSigner op as op 1, to be rejected by the test below.",
+          "calldata": "4176b43a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cafe",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] reject(1) - lone signer rejects the AddSigner. Approvals(0) -> Rejected.",
+          "calldata": "b8adaa110000000000000000000000000000000000000000000000000000000000000001",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] approve(1) after reject - status is Rejected, UnexpectedStatus, must revert",
+          "calldata": "b759f9540000000000000000000000000000000000000000000000000000000000000001",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "12345678",
+          "status": "failure"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[on-chain] execute(1, \"\") - rejected ops are skipped (no-op execute) and nonce advances to 2.",
+          "calldata": "59efcb15000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[off-chain] queueWithSignature(AddSigner(0x...beef), Contract(signer)) - anyone may call this; signature is a Contract-signature variant referencing the lone signer's caller address, which has pre-approved the operation hash via ApproveSignedHash. NOTE: requires ABIEncode/SigString for Operation+Signature and a prior ApproveSignedHash op; replace placeholder bytes once dispatch supports sum types.",
+          "calldata": "9b9bf4ec",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[off-chain] approveWithSignature(2, Contract(signer)) - approve op 2 via signature path. Placeholder calldata: selector + nonce(2) + signature ADT bytes (TBD).",
+          "calldata": "0e8d95f30000000000000000000000000000000000000000000000000000000000000002",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[off-chain] rejectWithSignature(2, Contract(signer)) - status is already Approvals(1), so this would trip SignerAlreadyApproved/UnexpectedStatus from the signature path. Demonstrates the off-chain reject surface; for a clean reject use a fresh op (see below).",
+          "calldata": "175f6f470000000000000000000000000000000000000000000000000000000000000002",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "12345678",
+          "status": "failure"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[off-chain] queueWithSignature(AddSigner(0x...f00d), Contract(signer)) - queue op 3, to be rejected below.",
+          "calldata": "9b9bf4ec",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+
+      {
+        "input": {
+          "comment": "[off-chain] rejectWithSignature(3, Contract(signer)) - off-chain reject of the freshly queued AddSigner. Approvals(0) -> Rejected.",
+          "calldata": "175f6f470000000000000000000000000000000000000000000000000000000000000003",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      }
+    ]
+  }
+}
