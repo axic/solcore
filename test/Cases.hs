@@ -289,6 +289,7 @@ cases =
       runTestForFileWith noDesugarOpt "compose_desugared.solc" caseFolder,
       runTestForFile "comparisons.solc" caseFolder,
       runTestForFile "bitwise.solc" caseFolder,
+      runTestForFile "modulo.solc" caseFolder,
       runTestForFile "CondExp.solc" caseFolder,
       runTestForFile "constrained-instance.solc" caseFolder,
       runTestForFile "constrained-instance-context.solc" caseFolder,
