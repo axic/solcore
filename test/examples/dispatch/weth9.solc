@@ -1,0 +1,116 @@
+import std.{*};
+import std.{address, uint256, mapping, memory, Num, Add, Sub, Bounded, Eq, Ord, Typedef};
+import std.dispatch.{*};
+pragma no-patterson-condition ;
+pragma no-coverage-condition ;
+pragma no-bounded-variable-condition ;
+
+// Local opcode wrappers — caller(), callvalue(), gas(), call() — kept
+// inline since the std library does not yet export typed helpers for them.
+
+function caller() -> address {
+  let res: word;
+  assembly {
+     res := caller()
+  }
+  return address(res);
+}
+
+function callvalue() -> uint256 {
+  let res: word;
+  assembly {
+     res := callvalue()
+  }
+  return uint256(res);
+}
+
+function gas() -> word {
+  let res: word;
+  assembly {
+     res := gas()
+  }
+  return res;
+}
+
+// Forward `wad` wei to `dst` via a zero-data CALL and revert on failure.
+function sendValue(dst: address, wad: uint256) -> () {
+  let to: word = Typedef.rep(dst);
+  let amt: word = Typedef.rep(wad);
+  let g: word = gas();
+  let ok: word;
+  assembly {
+    ok := call(g, to, amt, 0, 0, 0, 0)
+  }
+  require(ok != 0, Error(0x90b8ec18)); // TransferFailed()
+}
+
+contract WETH9 {
+  balances : mapping(address, uint256);
+  allowance : mapping(address, mapping(address, uint256));
+
+  constructor() {}
+
+  // --- ETH <-> WETH ---
+
+  public payable function deposit() -> () {
+    let msg_sender = caller();
+    let msg_value = callvalue();
+    balances[msg_sender] = Num.add(balances[msg_sender], msg_value);
+  }
+
+  public function withdraw(wad: uint256) -> () {
+    let msg_sender = caller();
+    require(balances[msg_sender] >= wad, Error(0xf4d678b8)); // InsufficientBalance()
+    balances[msg_sender] = balances[msg_sender] - wad;
+    sendValue(msg_sender, wad);
+  }
+
+  // totalSupply == ETH held by this contract (matches canonical WETH9).
+  public function totalSupply() -> uint256 {
+    let bal: word;
+    assembly {
+      bal := selfbalance()
+    }
+    return uint256(bal);
+  }
+
+  // --- ERC20 surface ---
+
+  public function balanceOf(account: address) -> uint256 {
+    return balances[account];
+  }
+
+  public function allowance(owner_: address, spender: address) -> uint256 {
+    return allowance[owner_][spender];
+  }
+
+  public function approve(usr: address, wad: uint256) -> bool {
+    let msg_sender = caller();
+    allowance[msg_sender][usr] = wad;
+    return true;
+  }
+
+  public function transfer(dst: address, wad: uint256) -> bool {
+    return transferFrom(caller(), dst, wad);
+  }
+
+  public function transferFrom(src: address, dst: address, wad: uint256) -> bool {
+    let msg_sender = caller();
+    require(balances[src] >= wad, Error(0xf4d678b8)); // InsufficientBalance()
+
+    if (src != msg_sender && allowance[src][msg_sender] != (Num.maxVal():uint256)) {
+      require(allowance[src][msg_sender] >= wad, Error(0x13be252b)); // InsufficientAllowance()
+      allowance[src][msg_sender] -= wad;
+    }
+    balances[src] = balances[src] - wad;
+    balances[dst] = balances[dst] + wad;
+    return true;
+  }
+
+  // Plain ETH transfers (no calldata, just value) auto-wrap into WETH.
+  payable fallback() -> () {
+    let msg_sender = caller();
+    let msg_value = callvalue();
+    balances[msg_sender] = Num.add(balances[msg_sender], msg_value);
+  }
+}
