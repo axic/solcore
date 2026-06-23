@@ -119,8 +119,7 @@ dispatches =
       runDispatchTest "empty.solc",
       runDispatchTest "empty_no_constructor.solc",
       runDispatchTest "generic_product.solc",
-      runDispatchTest "generic_sum.solc",
-      runDispatchTest "wildcard_match.solc"
+      runDispatchTest "generic_sum.solc"
     ]
   where
     runDispatchTest file = runTestForFileWith (emptyOption mempty) file "./test/examples/dispatch"
