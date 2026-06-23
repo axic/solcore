@@ -438,18 +438,22 @@ emitSumMatch allCons scrutinee alts = do
   sHullType <- translateMastType sType
   let noMatch c = ("_", [Hull.SRevert ("no match for: " ++ show c)])
   debug ["emitMatch: allCons ", show allConNames]
-  let defaultBranchMap = Map.fromList [(c, noMatch c) | c <- allConNames]
   branches <- emitEqns alts
-  let branchMap = foldr insertBranch defaultBranchMap branches
-  let orderedBranches = [branchMap Map.! c | c <- allConNames]
+  -- Process alts in source order, first-match-wins: a constructor binding,
+  -- once set, is never overwritten by a later alt (including a wildcard).
+  let branchMap = foldl insertBranch Map.empty branches
+  let orderedBranches = [Map.findWithDefault (noMatch c) c branchMap | c <- allConNames]
   debug ["emitMatch: branches ", show orderedBranches]
   matchCode <- buildMatch sVal sHullType orderedBranches
   return (sCode ++ matchCode)
   where
     allConNames = map constrName allCons
-    insertBranch :: (MastPat, HullPreBranch) -> PreBranchMap -> PreBranchMap
-    insertBranch (MastPVar _, stmts) _ = Map.fromList [(c, stmts) | c <- allConNames]
-    insertBranch (MastPCon (MastId n _) _, stmts) m = Map.insert n stmts m
+    keepOld _new old = old
+    insertBranch :: PreBranchMap -> (MastPat, HullPreBranch) -> PreBranchMap
+    insertBranch m (MastPVar _, stmts) =
+      foldr (\c -> Map.insertWith keepOld c stmts) m allConNames
+    insertBranch m (MastPCon (MastId n _) _, stmts) =
+      Map.insertWith keepOld n stmts m
     insertBranch _ _ = error "emitSumMatch.insertBranch: unexpected pattern"
 
     emitEqn :: MastAlt -> EM (MastPat, HullPreBranch)
