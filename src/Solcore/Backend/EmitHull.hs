@@ -1,7 +1,7 @@
 module Solcore.Backend.EmitHull (emitHull) where
 
 import Common.Monad
-import Control.Monad (when)
+import Control.Monad (unless, when)
 import Control.Monad.State
 import Data.List (partition)
 import Data.Map qualified as Map
@@ -325,19 +325,29 @@ emitStmt (MastMatch scrutinee alts) = emitMatch scrutinee alts
 emitStmt (MastFor initStmt cond post body) = do
   initStmts <- emitStmt initStmt
   (condExp, condStmts) <- emitExp cond
+  -- Side-effecting work for the condition is kept inline in condExp by
+  -- emitExp; the Yul translator (yule/Translate.hs genStmt SFor) re-derives
+  -- it via genExpr and threads it into init+post itself.  Duplicating it
+  -- again here would cause every iteration to re-evaluate side-effecting
+  -- conditions (sload, keccak256, calls) twice.
+  unless (null condStmts) $
+    errorsEM
+      [ "for-loop condition produced setup statements; this is not supported. "
+      , "Conditions must keep side effects inline in the expression so the Yul "
+      , "translator can hoist them safely into init+post exactly once."
+      ]
   postStmts <- emitStmt post
   bodyStmts <- concat <$> mapM emitStmt body
-  let (condAllocs, condCompute) = partition isAlloc condStmts
   let (postAllocs, postCompute) = partition isAlloc postStmts
   let (initAllocs, initCompute) = partition isAlloc initStmts
   -- All allocs go into the for-init block; Yul scopes for-init variables
   -- over the entire loop (cond, post, body), so no outer wrapper needed.
-  let allAllocs = initAllocs ++ condAllocs ++ postAllocs
+  let allAllocs = initAllocs ++ postAllocs
   pure
     [ Hull.SFor
-        (Hull.SBlock (allAllocs ++ initCompute ++ condCompute))
+        (Hull.SBlock (allAllocs ++ initCompute))
         condExp
-        (Hull.SBlock (postCompute ++ condCompute))
+        (Hull.SBlock postCompute)
         (Hull.SBlock bodyStmts)
     ]
   where
