@@ -1,0 +1,44 @@
+import std.{*};
+import std.dispatch.{*};
+pragma no-patterson-condition;
+pragma no-coverage-condition;
+pragma no-bounded-variable-condition;
+
+// Regression test for EmitHull.emitSumMatch wildcard handling.
+//
+// With a sum type of three constructors and a single explicit branch
+// followed by a wildcard, the wildcard must fall through to every
+// constructor not explicitly listed. Two explicit branches followed
+// by a wildcard must leave both explicit bindings intact while the
+// wildcard catches only the remaining constructor.
+contract WildcardMatch {
+    data Tri = A | B | C;
+
+    constructor() {}
+
+    function pick(t : Tri) -> uint256 {
+        match t {
+        | Tri.A => return uint256(100);
+        | _     => return uint256(200);
+        }
+    }
+
+    function pick2(t : Tri) -> uint256 {
+        match t {
+        | Tri.A => return uint256(10);
+        | Tri.B => return uint256(20);
+        | _     => return uint256(30);
+        }
+    }
+
+    // pick(A) must be 100; the wildcard must NOT overwrite the A branch.
+    public function pickA() -> uint256 { return pick(Tri.A); }
+    // pick(B) and pick(C) must both fall through the wildcard to 200.
+    public function pickB() -> uint256 { return pick(Tri.B); }
+    public function pickC() -> uint256 { return pick(Tri.C); }
+
+    // pick2(A)=10, pick2(B)=20: two explicit bindings must survive.
+    // pick2(C)=30: wildcard catches only the constructor not listed.
+    public function pickD() -> uint256 { return pick2(Tri.A); }
+    public function pickE() -> uint256 { return pick2(Tri.C); }
+}

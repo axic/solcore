@@ -1,0 +1,76 @@
+{
+  "wildcard_match": {
+    "bytecode": "",
+    "contract": "WildcardMatch",
+    "tests": [
+      {
+        "input": {
+          "comment": "constructor()",
+          "calldata": "",
+          "value": "0"
+        },
+        "kind": "constructor"
+      },
+      {
+        "input": {
+          "comment": "pickA() -> 100  (explicit branch must not be overwritten by wildcard)",
+          "calldata": "3d4ffb93",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "0000000000000000000000000000000000000000000000000000000000000064",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "pickB() -> 200  (wildcard catches B)",
+          "calldata": "495717e2",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "00000000000000000000000000000000000000000000000000000000000000c8",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "pickC() -> 200  (wildcard catches C)",
+          "calldata": "7f044faa",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "00000000000000000000000000000000000000000000000000000000000000c8",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "pickD() = pick2(A) -> 10  (both explicit branches must survive wildcard)",
+          "calldata": "d324a934",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "000000000000000000000000000000000000000000000000000000000000000a",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "pickE() = pick2(C) -> 30  (wildcard catches only the remaining constructor)",
+          "calldata": "67d1dd0f",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "000000000000000000000000000000000000000000000000000000000000001e",
+          "status": "success"
+        }
+      }
+    ]
+  }
+}
