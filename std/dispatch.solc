@@ -267,10 +267,9 @@ forall methods fb . methods:RunDispatch, fb:ExecMethod => instance Contract(meth
 
         // TODO: if all methods are non payable then we should life the callvalue check here
 
-        // set free memory pointer to the output of memoryguard
-        // https://docs.soliditylang.org/en/v0.8.30/yul.html#memoryguard
-        // TODO: we will need to consider immutables here at some point...
-        assembly { mstore(0x40, memoryguard(128)) }
+        // The free memory pointer is initialised by the backend (yule's
+        // addMemInit) for both the deployment and runtime objects, so the
+        // memoryguard mstore is no longer emitted here.
 
         // calldata shorter than 4 bytes can't contain a selector — skip
         // dispatch and invoke the fallback directly (matches Solidity)

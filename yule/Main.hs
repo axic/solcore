@@ -88,13 +88,13 @@ createDeployment (YulObject yulName yulCode [InnerObject (YulObject innerName in
   YulObject yulName yulCode' [yulInner']
   where
     yulCode' = yulCode <> deployCode innerName True
-    yulInner' = InnerObject (YulObject innerName (addRetCode innerCode) [])
+    yulInner' = InnerObject (YulObject innerName (addMemInit (addRetCode innerCode)) [])
 createDeployment (YulObject yulName yulCode []) =
   YulObject yulName' yulCode' [yulInner']
   where
     yulName' = yulName <> "Deploy"
     yulCode' = deployCode yulName False
-    yulInner' = InnerObject (YulObject yulName (addRetCode yulCode) [])
+    yulInner' = InnerObject (YulObject yulName (addMemInit (addRetCode yulCode)) [])
 createDeployment _ = error ("createDeployment not implemented for this type of object")
 
 -- | wrap a Yul chunk in a Solidity function with the given name
