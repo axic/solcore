@@ -221,10 +221,12 @@ transformConstructor contractName cons
                 (QualName "MethodLevelCallvalueCheck" "checkCallvalue")
                 [proxyExp (TyCon "NonPayable" [])]
           ]
+    -- The free memory pointer is initialised by the backend (yule's
+    -- addMemInit) for both the deployment and runtime objects, so the
+    -- memoryguard mstore is no longer emitted here.
     startBody =
       [ Asm
           [yulBlock|{
-            mstore(64, memoryguard(128))
             // Guard against truncated deployer (which also covers yulContractName)
             // A truncated input would cause `copy_arguments_for_constructor`
             // to underflow and do an impossible memory expansion resulting in OOG.
