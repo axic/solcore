@@ -1723,14 +1723,14 @@ tcYulStmt (YFor initBlk e bdy upd) =
       _ <- tcYulBlock upd
       pure ()
     pure ([], unit)
-tcYulStmt (YFun name args rets body) =
+tcYulStmt (YFun fnName args rets body) =
   do
     -- Yul functions are word-typed; register the name (so calls resolve and
     -- recursion type-checks) and check the body with the parameters and named
     -- returns bound. A zero-return function has type '... -> unit'.
-    let retTy = maybe unit (\rs -> if null rs then unit else word) rets
-        fnTy = funtype (map (const word) args) retTy
-    extEnv name (monotype fnTy)
+    let fnRetTy = maybe unit (\rs -> if null rs then unit else word) rets
+        fnTy = funtype (map (const word) args) fnRetTy
+    extEnv fnName (monotype fnTy)
     _ <- withLocalEnv do
       mapM_ (flip extEnv mword) args
       mapM_ (flip extEnv mword) (concat rets)
