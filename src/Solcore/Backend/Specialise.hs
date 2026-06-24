@@ -354,20 +354,26 @@ specConApp i@(Id _n conTy) args ty = do
   subst <- getSpSubst
   let argTypes = map typeOfTcExp args
   let argTypes' = applytv subst argTypes
-  let i' = applytv subst i
   let typedArgs = zip args argTypes'
   args' <- forM typedArgs (uncurry specExp)
   -- Unify the constructor's result type (from the current subst-applied conTy)
   -- with the target type ty.  This resolves phantom type parameters that do
   -- not appear in the constructor arguments (e.g. the 'ty' in
-  -- ABIDecoder(ty, reader) = ABIDecoder(reader)), whose type var may differ
-  -- from the caller's declared variable because the type checker used a
-  -- fresh meta-variable and did not fully substitute it before emitting the
-  -- typed AST.
+  -- ABIDecoder(ty, reader) = ABIDecoder(reader), or the left component 'a' of
+  -- inr : b -> sum(a, b)), whose type var may differ from the caller's declared
+  -- variable because the type checker used a fresh meta-variable and did not
+  -- fully substitute it before emitting the typed AST.
   let resultConTy = applytv subst (resultTy conTy)
   case specmgu resultConTy ty of
     Right phi -> extSpSubst phi
     Left _ -> return ()
+  -- Re-read the substitution AFTER the phantom resolution above and only then
+  -- ground the constructor Id's type.  Computing i' before extSpSubst (as was
+  -- done previously) dropped the phantom binding, so e.g. inr(y : g) kept its
+  -- left component unresolved and was emitted as inr<g> instead of inr<sum(a,g)>
+  -- — a sum nesting off-by-one that Yul codegen then rejected.
+  subst' <- getSpSubst
+  let i' = applytv subst' i
   let conTy' = foldr (:->) ty argTypes'
   debug ["> specConApp: ", prettyId i, " : ", pretty conTy, " ~> ", prettyId i', " : ", pretty conTy']
   debug ["< specConApp: ", prettyConApp i args, " ~> ", prettyConApp i' args']
