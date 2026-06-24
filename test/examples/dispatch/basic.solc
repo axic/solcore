@@ -1,14 +1,12 @@
 import std.{*};
 import std.dispatch.{*};
+// The address() opcode is not re-exported from std (only the `address`
+// type/constructor is), so pull it in directly, renamed to avoid clashing
+// with the `address` constructor below.
+import std.opcodes.{address as address_};
 
-// address() is not exported from std (only the `address` type/constructor is),
-// so wrap the opcode locally — same pattern ownable.solc uses for caller().
 function self() -> address {
-    let res: word;
-    assembly {
-        res := address()
-    }
-    return address(res);
+    return address(address_());
 }
 
 contract C {
