@@ -71,7 +71,7 @@ instance ABIDecoder(sum(f, g), reader) : ABIDecode(sum(f, g)) {
             // out-of-range tag so unauthenticated ADT inputs can't silently route
             // to inr (for tag > 1) instead of failing. Without this the `| _ =>`
             // arm below would accept every non-zero tag (1, 2, ..., 2^256-1).
-            require(!gtWord(tag, 1), Error(0x6f5a519f)); // ABIInvalidSumTag()
+            require(le(tag, 1), Error(0x6f5a519f)); // ABIInvalidSumTag(): tag <= 1
             match tag {
             | 0 =>
                 let dec_f : ABIDecoder(f, reader) = ABIDecoder(rdr);
