@@ -69,6 +69,30 @@
           "returndata": "0000000000000000000000000000000000000000000000000000000000000000",
           "status": "success"
         }
+      },
+      {
+        "input": {
+          "comment": "decodeAndGet(tag=2, value=77) reverts ABIInvalidSumTag() (out-of-range tag)",
+          "calldata": "0xc222f3f50000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004d",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "6f5a519f",
+          "status": "failure"
+        }
+      },
+      {
+        "input": {
+          "comment": "decodeAndGet(tag=2^256-1, value=77) reverts ABIInvalidSumTag() (max tag)",
+          "calldata": "0xc222f3f5ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000004d",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "6f5a519f",
+          "status": "failure"
+        }
       }
     ]
   }
