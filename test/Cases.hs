@@ -120,6 +120,7 @@ dispatches =
       runDispatchTest "empty_no_constructor.solc",
       runDispatchTest "generic_product.solc",
       runDispatchTest "generic_sum.solc",
+      runDispatchTest "sum_wide_product.solc",
       runDispatchTest "storage_adt_field.solc"
     ]
   where
