@@ -21,4 +21,5 @@ bash ./contest.sh test/examples/dispatch/ecrecover.json
 bash ./contest.sh test/examples/dispatch/memory.json
 bash ./contest.sh test/examples/dispatch/generic_sum.json
 bash ./contest.sh test/examples/dispatch/generic_product.json
+bash ./contest.sh test/examples/dispatch/storage_adt_field.json
 bash ./contest.sh test/examples/dispatch/forloops.json
