@@ -354,6 +354,7 @@ specConApp i@(Id _n conTy) args ty = do
   subst <- getSpSubst
   let argTypes = map typeOfTcExp args
   let argTypes' = applytv subst argTypes
+  let i' = applytv subst i
   let typedArgs = zip args argTypes'
   args' <- forM typedArgs (uncurry specExp)
   -- Unify the constructor's result type (from the current subst-applied conTy)
@@ -367,19 +368,7 @@ specConApp i@(Id _n conTy) args ty = do
   case specmgu resultConTy ty of
     Right phi -> extSpSubst phi
     Left _ -> return ()
-  -- Ground the constructor's type as (specialised arg types) -> (expected result
-  -- type ty), rather than carrying the type checker's `conTy` forward. `ty` is
-  -- the type this application is being specialised to, so it already pins down
-  -- phantom result-type parameters — those not determined by the arguments, e.g.
-  -- the left component `a` of inr : b -> sum(a, b). Reusing the old `conTy` left
-  -- such a phantom unresolved, so inr(y : g) was emitted as inr<g> instead of
-  -- inr<sum(a, g)> — a sum-nesting off-by-one that yule then rejected. EmitHull
-  -- only reads the constructor's *result* type (and the actual args), so a
-  -- well-typed application is unaffected (its result already equals ty).
-  ty' <- atCurrentSubst ty
-  argTypes'' <- atCurrentSubst (map typeOfTcExp args')
-  let conTy' = foldr (:->) ty' argTypes''
-  let i' = Id _n conTy'
+  let conTy' = foldr (:->) ty argTypes'
   debug ["> specConApp: ", prettyId i, " : ", pretty conTy, " ~> ", prettyId i', " : ", pretty conTy']
   debug ["< specConApp: ", prettyConApp i args, " ~> ", prettyConApp i' args']
   return (i', args')
