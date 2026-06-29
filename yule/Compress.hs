@@ -27,9 +27,16 @@ compressInjections :: Type -> Expr -> Expr
 compressInjections ty@(TSumN ts) expr = go 0 expr
   where
     arity = length ts
+    -- go peels the binary inl/inr chain of THIS sum to recover the N-ary tag k.
+    -- Every clause that emits a payload must `compress` it first, so that a
+    -- nested sum carried by an arm is itself rewritten into CInK/EInK form
+    -- (otherwise its inner injections stay binary and Translate.sizeOf disagrees
+    -- with the consumer's slot count). The EInr clause is the sole exception: it
+    -- is still walking the *outer* chain, so it recurses via `go` rather than
+    -- compressing -- compression happens at the terminal clauses below.
     go k expr1 | k == arity - 1 = EInK k ty (compress expr1)
     go k (EInr _ expr1) = go (k + 1) expr1
-    go k (EInl _ expr1) = EInK k ty expr1
+    go k (EInl _ expr1) = EInK k ty (compress expr1)
     go k expr1 = EInK k ty (compress expr1)
 compressInjections _ expr = compress expr
 
