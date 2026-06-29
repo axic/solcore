@@ -7,7 +7,7 @@ module Main where
 -- (Doc, Pretty(..), nest, render)
 import Builtins (yulBuiltins)
 import Common.Pretty
-import Compress
+import Language.Hull.Compress
 import Control.Monad (unless, when)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Language.Hull.Parser (parseObject)

@@ -112,6 +112,7 @@ library
       Solcore.Pipeline.SolcorePipeline
       Solcore.Primitives.Primitives
       Language.Hull
+      Language.Hull.Compress
       Language.Hull.Parser
       Language.Hull.TcEnv
       Language.Hull.TcMonad
@@ -147,7 +148,7 @@ executable yule
       PatternSynonyms
       BlockArguments
       ImportQualifiedPost
-    other-modules: Locus, Options, TM, Translate, Builtins, Compress
+    other-modules: Locus, Options, TM, Translate, Builtins
     build-depends:    base ^>=4.19.1.0,
                       pretty >=  1.1,
                       containers >= 0.6,
@@ -172,6 +173,7 @@ test-suite sol-core-tests
   -- cabal-fmt: expand test -Main
   other-modules:
     Cases
+    CompressTests
     ContractAbiTests
     HullCases
     MatchCompilerTests

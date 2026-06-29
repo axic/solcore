@@ -1,6 +1,7 @@
 module Main where
 
 import Cases
+import CompressTests
 import ContractAbiTests
 import HullCases
 import MatchCompilerTests
@@ -31,5 +32,6 @@ tests =
       matchTests,
       yulEvalTests,
       hullTests,
-      specialiseTests
+      specialiseTests,
+      compressTests
     ]
