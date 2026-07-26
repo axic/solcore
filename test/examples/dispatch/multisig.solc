@@ -334,6 +334,34 @@ contract Multisig {
         return bytes4(0x1626ba7e);
     }
 
+    // ---- View getters -------------------------------------------------------
+    // This contract emits no events and originally exposed no getters, so an
+    // off-chain client had no way to read its configuration. These expose the
+    // signer set / threshold / nonce over the ordinary ABI. Returns are scalar
+    // (uint256/address), so a standard viem read drives them directly; they only
+    // load storage.
+    public function signersRequired() -> uint256 {
+        return signers_required;
+    }
+
+    public function signersCount() -> uint256 {
+        return signers_count;
+    }
+
+    public function signerAt(index: uint256) -> address {
+        return signers[index];
+    }
+
+    // Named getNonce() rather than nonce() to avoid clashing with the `nonce`
+    // storage field (cf. getOwner()/owner in the Wallet example).
+    public function getNonce() -> uint256 {
+        return nonce;
+    }
+
+    public function operationsCount() -> uint256 {
+        return operations_count;
+    }
+
     // TODO: these functions should be non-public
 
     // TODO: this is suboptimal
