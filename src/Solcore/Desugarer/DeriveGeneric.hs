@@ -291,7 +291,8 @@ methodCall cls method args = Call Nothing (QualName (Name cls) method) args
 buildStorageInstances :: DataTy -> [TopDecl Name]
 buildStorageInstances dt =
   [ TInstDef (buildStorageSize dt),
-    TInstDef (buildCanStore dt)
+    TInstDef (buildCanStore dt),
+    TInstDef (buildStorageCopy dt)
   ]
 
 -- instance <ctx> => T(params) : StorageSize {
@@ -385,6 +386,59 @@ buildCanStore dt =
     loadBody =
       [ Let False (Name "_x") (Just repT) (Just (methodCall "CanStore" "load" [repSlot])),
         Return (methodCall "Generic" "to" [Var (Name "_x")])
+      ]
+
+-- instance <ctx> => T(params) : StorageCopy {
+--   function copySlot(dst : storage(T(params)), src : storage(T(params))) -> () {
+--     CanStore.store(dst, CanStore.load(src) : T(params));
+--   }
+-- }
+--
+-- Needed so a data type can be an element of a storage array: the whole-array
+-- CanStore instance (std, storage(array(v)):CanStore(...)) constrains the element
+-- v:StorageCopy, and a contract field read of `array(T)` resolves through it. The
+-- fixed leaves (word/address/string/…) provide StorageCopy directly; an ADT copies
+-- one element by round-tripping its value through CanStore.load / CanStore.store,
+-- exactly as the string/bytes StorageCopy leaves do, so any dynamic payload is
+-- copied too. The per-parameter context mirrors the derived CanStore instance so
+-- the load/store resolve for parametric types; for a concrete type it is empty.
+buildStorageCopy :: DataTy -> Instance Name
+buildStorageCopy dt =
+  Instance
+    { instDefault = False,
+      instVars = dataParams dt,
+      instContext =
+        [InCls (Name "CanStore") (storageTyOf (TyVar tv)) [TyVar tv] | tv <- dataParams dt]
+          ++ [InCls (Name "StorageSize") (TyVar tv) [] | tv <- dataParams dt],
+      instName = Name "StorageCopy",
+      paramsTy = [],
+      mainTy = mainTyOf dt,
+      instFunctions = [FunDef False sig body]
+    }
+  where
+    mainT = mainTyOf dt
+    sig =
+      Signature
+        { sigVars = [],
+          sigContext = [],
+          sigName = Name "copySlot",
+          sigParams =
+            [ Typed False (Name "_dst") (storageTyOf mainT),
+              Typed False (Name "_src") (storageTyOf mainT)
+            ],
+          sigRetComptime = False,
+          sigReturn = Just unitTy,
+          sigPayable = False
+        }
+    body =
+      [ StmtExp
+          ( methodCall
+              "CanStore"
+              "store"
+              [ Var (Name "_dst"),
+                TyExp (methodCall "CanStore" "load" [Var (Name "_src")]) mainT
+              ]
+          )
       ]
 
 boolTy :: Ty

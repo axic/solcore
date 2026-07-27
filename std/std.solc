@@ -1824,7 +1824,10 @@ instance storage(array(t)):Length {
     }
 }
 
-forall t .
+// Each element occupies StorageSize.size(t) slots (one for a word-sized element,
+// more for a multi-slot ADT). The length word counts elements, so every slot
+// offset below is scaled by the element size, matching solc's array layout.
+forall t . t:StorageSize =>
 instance storage(array(t)):Array {
     // Shrinking clears the abandoned slots, matching solc's resize_array.
     // For string/bytes elements this zeroes the inline slot, which makes any
@@ -1835,8 +1838,9 @@ instance storage(array(t)):Array {
         let oldLen : word = sload(slot);
         let newLen : word = Typedef.rep(n);
         if (newLen < oldLen) {
+            let elemSz : word = StorageSize.size(Proxy : Proxy(t));
             let base : word = hash1(slot);
-            clearStorageRange(base + newLen, base + oldLen);
+            clearStorageRange(base + newLen * elemSz, base + oldLen * elemSz);
         }
         sstore(slot, newLen);
     }
@@ -1845,7 +1849,9 @@ instance storage(array(t)):Array {
         let slot : word = Typedef.rep(arr);
         let n : word = sload(slot);
         if (n == 0) { out_of_bounds(); }
-        sstore(hash1(slot) + (n - 1), 0);
+        let elemSz : word = StorageSize.size(Proxy : Proxy(t));
+        let base : word = hash1(slot) + (n - 1) * elemSz;
+        clearStorageRange(base, base + elemSz);
         sstore(slot, n - 1);
     }
 }
@@ -1855,12 +1861,15 @@ instance storage(array(t)):Array {
 // memory(string), via storage(string):CanStore(memory(string)). For word-sized
 // elements v collapses to the element type and CanStore.store delegates to
 // StorageType.store, so the generated code is unchanged.
-forall t v . storage(t):CanStore(v) =>
+forall t v . storage(t):CanStore(v), t:StorageSize =>
 instance storage(array(t)):ArrayPush(v) {
     function push(arr:storage(array(t)), val:v) -> () {
         let slot : word = Typedef.rep(arr);
         let n : word = sload(slot);
-        CanStore.store(storage(hash1(slot) + n):storage(t), val);
+        // Append at element index n, which begins n * elemSize slots into the
+        // element region (each element occupies StorageSize.size(t) slots).
+        let elemSz : word = StorageSize.size(Proxy : Proxy(t));
+        CanStore.store(storage(hash1(slot) + n * elemSz):storage(t), val);
         sstore(slot, n + 1);
     }
 }
@@ -1976,7 +1985,7 @@ forall k v.
     }
 }
 
-forall v. v:StorageCopy =>
+forall v. v:StorageCopy, v:StorageSize =>
  instance storage(array(v)):CanStore(storage(array(v))) {
     // Whole-array assignment is a deep copy, as in Solidity: a = b resizes a
     // to b's length and then copies every
@@ -1988,15 +1997,18 @@ forall v. v:StorageCopy =>
       if (dst != src) {
         let oldLen : word = sload(dst);
         let newLen : word = sload(src);
+        // Element regions are scaled by StorageSize.size(v), so multi-slot
+        // elements (ADTs) clear and copy their full footprint.
+        let elemSz : word = StorageSize.size(Proxy : Proxy(v));
         let dstBase : word = hash1(dst);
         if (newLen < oldLen) {
-          clearStorageRange(dstBase + newLen, dstBase + oldLen);
+          clearStorageRange(dstBase + newLen * elemSz, dstBase + oldLen * elemSz);
         }
         sstore(dst, newLen);
         let srcBase : word = hash1(src);
         let i : word = 0;
         for (; i < newLen; i += 1) {
-          StorageCopy.copySlot(storage(dstBase + i):storage(v), storage(srcBase + i):storage(v));
+          StorageCopy.copySlot(storage(dstBase + i * elemSz):storage(v), storage(srcBase + i * elemSz):storage(v));
         }
       }
     }
@@ -2194,7 +2206,7 @@ instance (storage(mapping(i,a)), i): RValueIdxAccess(a) {
   }
 }
 
-forall a i . i:Typedef(word) =>
+forall a i . a:StorageSize, i:Typedef(word) =>
 instance (storage(array(a)), i): LValueIdxAccess(storage(a)) {
   function lookup(xi : (storage(array(a)), i)) -> storage(a) {
     match(xi) {
@@ -2204,7 +2216,12 @@ instance (storage(array(a)), i): LValueIdxAccess(storage(a)) {
           // Bounds check: idx must be in [0, length). Length lives at the
           // slot itself; inlined to avoid an Array(t) dispatch here.
           if (idx >= sload(slot)) { out_of_bounds(); }
-          return storage(hash1(slot) + idx);
+          // Each element occupies StorageSize.size(a) slots, so element idx
+          // begins at keccak(slot) + idx * elemSize (solc's array layout).
+          // For word-sized elements elemSize is 1 and this reduces to the old
+          // keccak(slot) + idx.
+          let elemSz : word = StorageSize.size(Proxy : Proxy(a));
+          return storage(hash1(slot) + idx * elemSz);
     }
   }
 }
@@ -2213,7 +2230,7 @@ instance (storage(array(a)), i): LValueIdxAccess(storage(a)) {
 // than the element tag type. For word-sized elements that is the element itself;
 // for array(string) it is a memory(string); for a nested array(array(t)) it
 // is the inner array's handle, which push/pop/length then consume.
-forall a v i . storage(a):CanStore(v), i:Typedef(word) =>
+forall a v i . storage(a):CanStore(v), a:StorageSize, i:Typedef(word) =>
 instance (storage(array(a)), i): RValueIdxAccess(v) {
   function lookup(xi : (storage(array(a)), i)) -> v {
     return CanStore.load(LValueIdxAccess.lookup(xi));

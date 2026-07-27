@@ -1,0 +1,124 @@
+{
+  "storage_array_adt": {
+    "bytecode": "",
+    "contract": "Multisig",
+    "tests": [
+      {
+        "input": {
+          "comment": "constructor()",
+          "calldata": "",
+          "value": "0"
+        },
+        "kind": "constructor"
+      },
+      {
+        "input": {
+          "comment": "queue(AddSigner(0xcafe0001))",
+          "calldata": "8f0aa818000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cafe0001",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "queue(RemoveSigner(0xcafe0002))",
+          "calldata": "8f0aa818000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000cafe0002",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "count() -> 2",
+          "calldata": "06661abd",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "0000000000000000000000000000000000000000000000000000000000000002",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "kindOf(0) -> 0 (AddSigner)",
+          "calldata": "2345e28c0000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "0000000000000000000000000000000000000000000000000000000000000000",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "kindOf(1) -> 1 (RemoveSigner)",
+          "calldata": "2345e28c0000000000000000000000000000000000000000000000000000000000000001",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "0000000000000000000000000000000000000000000000000000000000000001",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "signerOf(0) -> 0xcafe0001",
+          "calldata": "5161fdf50000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "00000000000000000000000000000000000000000000000000000000cafe0001",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "signerOf(1) -> 0xcafe0002",
+          "calldata": "5161fdf50000000000000000000000000000000000000000000000000000000000000001",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "00000000000000000000000000000000000000000000000000000000cafe0002",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "getOperation(0) -> AddSigner(0xcafe0001): [tag 0][addr]",
+          "calldata": "202e39240000000000000000000000000000000000000000000000000000000000000000",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cafe0001",
+          "status": "success"
+        }
+      },
+      {
+        "input": {
+          "comment": "getOperation(1) -> RemoveSigner(0xcafe0002): [tag 1][addr]",
+          "calldata": "202e39240000000000000000000000000000000000000000000000000000000000000001",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000cafe0002",
+          "status": "success"
+        }
+      }
+    ]
+  }
+}

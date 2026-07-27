@@ -137,6 +137,7 @@ dispatches =
       runDispatchTest "storage_adt_abi.solc",
       runDispatchTest "storage_dynamic_field.solc",
       runDispatchTest "storage_array.solc",
+      runDispatchTest "storage_array_adt.solc",
       runDispatchTest "ufcs_array.solc",
       runDispatchTest "array_ops.solc",
       runDispatchTest "array_copy.solc",

@@ -1,0 +1,62 @@
+import std.{*};
+import std.dispatch.{*};
+import std.Generic.{*};
+import std.ABIGeneric.{*};
+import std.StorageGeneric.{*};
+
+// A storage *array* of an algebraic data type whose elements span more than one
+// slot. This is the case the multisig contract wants (`operations : array(Operation)`)
+// and the reason its predecessor had to fall back to `mapping(uint256, Operation)`.
+//
+// Operation's SOP representation is sum(address, address), so each element
+// occupies StorageSize.size = 1 (tag) + max(1, 1) = 2 storage slots. A dynamic
+// storage array must therefore place element i at keccak(slot) + i * 2, not
+// keccak(slot) + i. With the old one-slot-per-element addressing, pushing a
+// second element overwrote the first element's payload slot; the golden vectors
+// below (two DISTINCT addresses, read back independently) only hold with the
+// element-size-aware layout.
+//
+// This simultaneously exercises the ABI boundary: `queue` decodes an Operation
+// from calldata and `getOperation` re-encodes one into returndata via the
+// generic sum ABI codec.
+
+data Operation = AddSigner(address) | RemoveSigner(address);
+
+contract Multisig {
+    operations : array(Operation);
+
+    constructor() {}
+
+    // ADT decoded from calldata, then appended to the storage array.
+    public function queue(op : Operation) -> () {
+        operations.push(op);
+    }
+
+    // ADT loaded from the storage array by index, then ABI-encoded into returndata.
+    public function getOperation(i : uint256) -> Operation {
+        return operations[i];
+    }
+
+    public function count() -> uint256 {
+        return Length.length(operations);
+    }
+
+    // Reads element i and discriminates on its constructor: 0 = AddSigner,
+    // 1 = RemoveSigner. Proves the per-element tag slot is addressed correctly.
+    public function kindOf(i : uint256) -> uint256 {
+        match operations[i] {
+        | Operation.AddSigner(_)    => return uint256(0);
+        | Operation.RemoveSigner(_) => return uint256(1);
+        }
+    }
+
+    // Reads element i and returns its address payload. Proves the per-element
+    // payload slot (one past the tag) is addressed correctly and not clobbered
+    // by a neighbouring element.
+    public function signerOf(i : uint256) -> address {
+        match operations[i] {
+        | Operation.AddSigner(s)    => return s;
+        | Operation.RemoveSigner(s) => return s;
+        }
+    }
+}
