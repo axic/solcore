@@ -1146,16 +1146,6 @@ instance string:ABIAttribs {
     function headSize(ty: Proxy(string)) -> word { return 32; }
     function isStatic(ty : Proxy(string)) -> bool { return false; }
 }
-// `bytes` is dynamic just like `string`. Without this instance `memory(bytes)`
-// resolves ABIAttribs only through the catch-all `default instance t:ABIAttribs`
-// (headSize 32, isStatic true). That default cannot satisfy the `g:ABIAttribs`
-// context of `sum(f,g):ABIAttribs`, so any ADT with a `memory(bytes)` branch
-// collapses its whole `ABIAttribs` to the 32-byte static default — making
-// `abi_encode` truncate the return to the tag word. Mirror `string`.
-instance bytes:ABIAttribs {
-    function headSize(ty: Proxy(bytes)) -> word { return 32; }
-    function isStatic(ty : Proxy(bytes)) -> bool { return false; }
-}
 
 // computes the attribs for a pair of two types that implement attribs
 forall a b . a:ABIAttribs, b:ABIAttribs => instance (a,b):ABIAttribs {
