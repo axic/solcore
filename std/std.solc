@@ -89,6 +89,7 @@ export {
   hash2,
   keccak256_,
   keccakLit,
+  keccakWordLit,
   le,
   lidx,
   loadBytesFromStorage,
@@ -1084,6 +1085,14 @@ function strlenLit(a:string) -> word {
 }
 
 function keccakLit(a:string) -> word {
+  unimplemented(); // Sanity check if folding ignores it.
+  return 0;
+}
+
+// keccak256 of a word's 32-byte big-endian representation (comptime-only).
+// The string-literal `keccakLit` hashes UTF-8 bytes; this hashes an already
+// computed word, as needed for the nested keccak of ERC-7201.
+function keccakWordLit(a:word) -> word {
   unimplemented(); // Sanity check if folding ignores it.
   return 0;
 }
@@ -2702,20 +2711,14 @@ function ecrecover(hash: bytes32, v: uint256, r: bytes32, s: bytes32) -> address
     return address(res);
 }
 
-// TODO: use string here
-// TODO: eventually this needs to become comptime
-function erc7201(id: memory(bytes)) -> bytes32 {
-//    return keccak256_(to_bytes(keccak256_(id) - 1)) & ~0xff;
-    return Typedef.abs(
-        and_(
-            Typedef.rep(
-                keccak256_(
-                    to_bytes(bytes32(Typedef.rep(keccak256_(id)) - 1))
-                )
-            ),
-            not_(0xff)
-        )
-    );
+// ERC-7201 namespaced storage slot, computed entirely at compile time from a
+// string-literal namespace `id`:
+//   keccak256(abi.encode(uint256(keccak256(bytes(id))) - 1)) & ~bytes32(uint256(0xff))
+// `keccakLit` hashes the namespace string and `keccakWordLit` performs the
+// outer keccak over the (word-sized) `- 1` preimage; both keccaks and the word
+// arithmetic fold to a single `bytes32` literal (see MastEval.evalPrimitive).
+function erc7201(id: string) -> comptime bytes32 {
+    return bytes32(keccakWordLit(keccakLit(id) - 1) & ~0xff);
 }
 
 forall a . a:MemorySize, a:MemoryPointer => function raw_call(target: address, value: uint256, payload: a) -> (bool, memory(bytes)) {
