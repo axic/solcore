@@ -976,7 +976,7 @@ function zeroize_memory(ptr: word, len: word) -> () {
     let end_ptr = ptr + len;
 
     // Zero out 32-byte words.
-    for (let i = 0; i < len / 32; i += 1, ptr + 32) {
+    for (let i = 0; i < len / 32; i += 1, ptr += 32) {
         mstore(ptr, 0)
     }
 
