@@ -35,12 +35,9 @@ function MAX_DEPOSIT_COUNT() -> uint256 {
 
 contract DepositContract {
   deposit_count : uint256;
-  // TODO: need storage array support
-  // branch: array(uint256, DEPOSIT_CONTRACT_TREE_DEPTH());
-  // zero_hashes : array(uint256, DEPOSIT_CONTRACT_TREE_DEPTH());
-  // misusing mappings here, the index is the key
-  branch : mapping(uint256, bytes32);
-  zero_hashes : mapping(uint256, bytes32);
+  // TODO: use fixed-size arrays of DEPOSIT_CONTRACT_TREE_DEPTH() length
+  branch : array(bytes32);
+  zero_hashes : array(bytes32);
 
   constructor() {
     // Compute hashes in empty sparse Merkle tree
