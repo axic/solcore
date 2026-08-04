@@ -506,22 +506,13 @@ evalPrimitive (Name "strlenLit") [MastLit (StrLit s)] =
    in Just (MastLit (IntLit (toInteger (BS.length bs))))
 evalPrimitive (Name "keccakLit") [MastLit (StrLit s)] =
   let bs = TE.encodeUtf8 (T.pack s)
-      digest :: Digest Keccak_256
-      digest = hash bs
-      digestBytes :: BS.ByteString
-      digestBytes = BA.convert digest
-   in Just (MastLit (IntLit (bsToIntegerBE digestBytes)))
+   in Just (MastLit (IntLit (keccak256BE bs)))
 -- keccak256 of a word's 32-byte big-endian representation. The comptime
 -- counterpart of `keccakLit` for an already-computed word (e.g. the outer
 -- keccak of ERC-7201), where the preimage is a 32-byte word rather than a
 -- UTF-8 string literal.
 evalPrimitive (Name "keccakWordLit") [MastLit (IntLit n)] =
-  let bs = integerToBE32 n
-      digest :: Digest Keccak_256
-      digest = hash bs
-      digestBytes :: BS.ByteString
-      digestBytes = BA.convert digest
-   in Just (MastLit (IntLit (bsToIntegerBE digestBytes)))
+  Just (MastLit (IntLit (keccak256BE (integerToBE32 n))))
 -- Integer (comptime-only, unlimited precision) primitives:
 evalPrimitive (Name "wordToInteger") [MastLit (IntLit n)] =
   Just (MastLit (IntLit n)) -- value-level identity
@@ -553,6 +544,10 @@ integerToBE32 n =
   BS.pack [fromIntegral (m `shiftR` (8 * i)) | i <- [31, 30 .. 0]]
   where
     m = maskWord n
+
+-- | keccak256 of a byte string, returned as a big-endian integer word.
+keccak256BE :: BS.ByteString -> Integer
+keccak256BE bs = bsToIntegerBE (BA.convert (hash bs :: Digest Keccak_256))
 
 -- Construct a boolean value as sum((), ())
 -- true = inr(()), false = inl(())
