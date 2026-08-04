@@ -1,0 +1,28 @@
+{
+  "asm_shadow_scope": {
+    "bytecode": "_CODE",
+    "contract": "C",
+    "tests": [
+      {
+        "input": {
+          "comment": "constructor()",
+          "calldata": "",
+          "value": "0"
+        },
+        "kind": "constructor"
+      },
+      {
+        "input": {
+          "comment": "asmShadow()(uint256) -> 42 (reads the asm-local `v1`, not the match binding)",
+          "calldata": "4f77926d",
+          "value": "0"
+        },
+        "kind": "call",
+        "output": {
+          "returndata": "000000000000000000000000000000000000000000000000000000000000002a",
+          "status": "success"
+        }
+      }
+    ]
+  }
+}

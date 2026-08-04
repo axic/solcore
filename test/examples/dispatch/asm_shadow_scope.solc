@@ -1,0 +1,25 @@
+import std.{*};
+import std.dispatch.{*};
+
+contract C {
+    constructor() {}
+
+    // Regression test: assembly-block substitution must respect Yul scoping.
+    // `v1` is a match-bound variable; the assembly block then declares its OWN
+    // Yul-local `v1` and reads it back.  The read must resolve to the local
+    // (42) -- not to the enclosing match variable.  Getting this wrong shows up
+    // twice: the frontend (`EmitHull`) would materialize the shadowed match
+    // variable and collide with the `let v1` declaration, and the `yule`
+    // substitution would redirect the read to the enclosing binding.
+    public function asmShadow() -> uint256 {
+        let foo : (word, word) = (7, 9);
+        let res : word;
+        match foo {
+          | (v0, v1) => assembly {
+              let v1 := 42
+              res := v1
+          }
+        }
+        return uint256(res);
+    }
+}
