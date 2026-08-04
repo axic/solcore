@@ -49,7 +49,7 @@
       },
       {
         "input": {
-          "comment": "keccakWord()(uint256) -- comptime keccakWordLit(0) == keccak256(bytes32(0))",
+          "comment": "keccakWord()(bytes32) -- comptime keccakWordLit(0) == keccak256(bytes32(0))",
           "calldata": "6c632152",
           "value": "0"
         },

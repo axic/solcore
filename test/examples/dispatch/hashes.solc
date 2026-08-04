@@ -27,8 +27,8 @@ contract C {
 
     // keccakWordLit folds keccak256 of a word's 32-byte big-endian form at
     // compile time; keccakWordLit(0) == keccak256(bytes32(0)).
-    public function keccakWord() -> word {
-        return keccakWordLit(0);
+    public function keccakWord() -> bytes32 {
+        return bytes32(keccakWordLit(0));
     }
 
     // ERC-7201 namespaced storage slots, folded to constants at compile time
