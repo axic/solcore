@@ -4,6 +4,8 @@ module Language.Hull.ToYul.Translate where
 
 import Data.List (partition)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
 import Data.String
 import GHC.Stack
 import Language.Hull hiding (Name)
@@ -109,51 +111,84 @@ genStmt :: Stmt -> TM [YulStmt]
 genStmt (SAssembly stmts) = do
   -- debug ["assembly:", render$ ppr (Yul stmts)]
   env <- getVarEnv
-  pure (map (substAsmStmt env) stmts)
+  pure (substAsmBlock env Set.empty stmts)
   where
     -- Substitute Hull variable references in assembly statements with their
     -- current Yul names.  Assembly blocks are emitted verbatim, so without
     -- this substitution a variable declared as `let msg_value : uint256` (which
     -- gets allocated as `_v0`) would be referenced by its Hull name and be
     -- undeclared in the generated Yul.
-    substAsmStmt env (YBlock body) =
-      YBlock (map (substAsmStmt env) body)
-    substAsmStmt env (YFun name args rets body) =
-      YFun name args rets (map (substAsmStmt env) body)
-    substAsmStmt env (YLet names me) =
-      YLet names (fmap (substAsmExp env) me)
-    substAsmStmt env (YAssign lhs e) =
-      YAssign (map (substAsmName env) lhs) (substAsmExp env e)
-    substAsmStmt env (YExp e) =
-      YExp (substAsmExp env e)
-    substAsmStmt env (YIf e body) =
-      YIf (substAsmExp env e) (map (substAsmStmt env) body)
-    substAsmStmt env (YSwitch e cases mdef) =
-      YSwitch
-        (substAsmExp env e)
-        (map (\(lit, body) -> (lit, map (substAsmStmt env) body)) cases)
-        (fmap (map (substAsmStmt env)) mdef)
-    substAsmStmt env (YFor pre cond post body) =
-      YFor
-        (map (substAsmStmt env) pre)
-        (substAsmExp env cond)
-        (map (substAsmStmt env) post)
-        (map (substAsmStmt env) body)
-    substAsmStmt _ s = s
+    --
+    -- The rewrite must respect Yul scoping: a binding introduced inside the
+    -- block (a `let`, a `for`-init declaration, or a function parameter/return)
+    -- shadows any enclosing Hull variable of the same name, so references to it
+    -- must be left untouched.  `scope` tracks the names bound locally, threaded
+    -- left-to-right so later siblings see earlier declarations (mirroring
+    -- 'Solcore.Backend.EmitHull.renameYulStmts').  Without it, an asm-local name
+    -- that collides with a stack-slot Hull variable would either read the wrong
+    -- slot or, inside a function body, emit an illegal reference to an enclosing
+    -- local (which Yul forbids, so solc rejects the output).
+    substAsmBlock _ _ [] = []
+    substAsmBlock env scope (s : ss) =
+      let (s', scope') = substAsmStmt env scope s
+       in s' : substAsmBlock env scope' ss
 
-    substAsmExp env (YIdent n) = case Map.lookup (show n) env of
-      Just loc -> case flattenRhs loc of
-        [e'] -> e'
-        _ -> YIdent n -- multi-slot locations cannot appear in assembly
-      Nothing -> YIdent n
-    substAsmExp env (YCall f args) = YCall f (map (substAsmExp env) args)
-    substAsmExp _ e = e
+    substAsmStmt env scope (YBlock body) =
+      (YBlock (substAsmBlock env scope body), scope)
+    substAsmStmt env scope (YFun name args rets body) =
+      let bodyScope = scope `Set.union` Set.fromList (args ++ fromMaybe [] rets)
+          body' = substAsmBlock env bodyScope body
+       in (YFun name args rets body', Set.insert name scope)
+    substAsmStmt env scope (YLet names me) =
+      let me' = fmap (substAsmExp env scope) me
+       in (YLet names me', scope `Set.union` Set.fromList names)
+    substAsmStmt env scope (YAssign lhs e) =
+      let lhs' = map (substAsmName env scope) lhs
+       in (YAssign lhs' (substAsmExp env scope e), scope)
+    substAsmStmt env scope (YExp e) =
+      (YExp (substAsmExp env scope e), scope)
+    substAsmStmt env scope (YIf e body) =
+      (YIf (substAsmExp env scope e) (substAsmBlock env scope body), scope)
+    substAsmStmt env scope (YSwitch e cases mdef) =
+      let e' = substAsmExp env scope e
+          cases' = map (\(lit, body) -> (lit, substAsmBlock env scope body)) cases
+          mdef' = fmap (substAsmBlock env scope) mdef
+       in (YSwitch e' cases' mdef', scope)
+    substAsmStmt env scope (YFor pre cond post body) =
+      -- In Yul the for-init block shares scope with the condition, post, and
+      -- body, so its declarations must be visible to all four.
+      let scope' = scope `Set.union` blockDecls pre
+          pre' = substAsmBlock env scope' pre
+          cond' = substAsmExp env scope' cond
+          post' = substAsmBlock env scope' post
+          body' = substAsmBlock env scope' body
+       in (YFor pre' cond' post' body', scope)
+    substAsmStmt _ scope s = (s, scope)
 
-    substAsmName env n = case Map.lookup (show n) env of
-      Just loc -> case flattenLhs loc of
-        [n'] -> n'
-        _ -> n -- multi-slot: cannot appear as a single assembly lvalue
-      Nothing -> n
+    substAsmExp env scope e@(YIdent n)
+      | Set.member n scope = e
+      | otherwise = case Map.lookup (show n) env of
+          Just loc -> case flattenRhs loc of
+            [e'] -> e'
+            _ -> e -- multi-slot locations cannot appear in assembly
+          Nothing -> e
+    substAsmExp env scope (YCall f args) = YCall f (map (substAsmExp env scope) args)
+    substAsmExp _ _ e = e
+
+    substAsmName env scope n
+      | Set.member n scope = n
+      | otherwise = case Map.lookup (show n) env of
+          Just loc -> case flattenLhs loc of
+            [n'] -> n'
+            _ -> n -- multi-slot: cannot appear as a single assembly lvalue
+          Nothing -> n
+
+    -- Names declared by a block's statements (used for the shared for-init scope).
+    blockDecls = foldr addDecl Set.empty
+      where
+        addDecl (YLet names _) s = Set.fromList names `Set.union` s
+        addDecl (YFun f _ _ _) s = Set.insert f s
+        addDecl _ s = s
 genStmt (SAlloc name typ) = allocVar name typ
 genStmt (SAssign name expr) = hullAssign name expr
 genStmt (SReturn expr) = do
