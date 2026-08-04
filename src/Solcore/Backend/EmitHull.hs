@@ -626,22 +626,68 @@ debug msg = do
 concatMapM :: (Monad f) => (a -> f [b]) -> [a] -> f [b]
 concatMapM f xs = concat <$> mapM f xs
 
--- | Collect all identifier names used in expression positions in a Yul block.
+-- | Collect the *free* identifier names referenced in expression positions in a
+-- Yul block: names used but not bound by an enclosing `let`, `for`-init, or
+-- function parameter/return within the block.  This must respect Yul scoping,
+-- exactly like 'renameYulStmts': a locally-declared name that shadows an outer
+-- Hull variable is not a use of that outer variable.  Otherwise the shadowed
+-- outer variable is spuriously materialized by 'emitStmt' (MastAsm), and the
+-- allocation it emits collides with the shadowing local declaration.
 yulUsedNames :: [YulStmt] -> Set.Set Name
-yulUsedNames = Set.fromList . concatMap goStmt
+yulUsedNames = goBlock Set.empty
   where
-    goStmt (YBlock b) = concatMap goStmt b
-    goStmt (YFun _ _ _ b) = concatMap goStmt b
-    goStmt (YLet _ me) = maybe [] goExp me
-    goStmt (YAssign ns e) = ns ++ goExp e
-    goStmt (YIf e b) = goExp e ++ concatMap goStmt b
-    goStmt (YSwitch e cs d) = goExp e ++ concatMap (concatMap goStmt . snd) cs ++ maybe [] (concatMap goStmt) d
-    goStmt (YFor p e po b) = concatMap goStmt p ++ goExp e ++ concatMap goStmt po ++ concatMap goStmt b
-    goStmt (YExp e) = goExp e
-    goStmt _ = []
-    goExp (YIdent n) = [n]
-    goExp (YCall _ args) = concatMap goExp args
-    goExp _ = []
+    goBlock :: Set.Set Name -> [YulStmt] -> Set.Set Name
+    goBlock _ [] = Set.empty
+    goBlock scope (s : ss) =
+      let (used, scope') = goStmt scope s
+       in used `Set.union` goBlock scope' ss
+
+    goStmt :: Set.Set Name -> YulStmt -> (Set.Set Name, Set.Set Name)
+    goStmt scope (YBlock b) = (goBlock scope b, scope)
+    goStmt scope (YFun _ args rets b) =
+      let bodyScope = scope `Set.union` Set.fromList (args ++ fromMaybe [] rets)
+       in (goBlock bodyScope b, scope)
+    goStmt scope (YLet names me) =
+      (maybe Set.empty (goExp scope) me, scope `Set.union` Set.fromList names)
+    goStmt scope (YAssign ns e) =
+      (freeOf scope ns `Set.union` goExp scope e, scope)
+    goStmt scope (YIf e b) = (goExp scope e `Set.union` goBlock scope b, scope)
+    goStmt scope (YSwitch e cs d) =
+      let used =
+            Set.unions
+              [ goExp scope e,
+                Set.unions (map (goBlock scope . snd) cs),
+                maybe Set.empty (goBlock scope) d
+              ]
+       in (used, scope)
+    goStmt scope (YFor p e po b) =
+      -- In Yul the for-init block shares scope with cond, post, and body.
+      let preScope = scope `Set.union` blockDecls p
+          used =
+            Set.unions
+              [ goBlock preScope p,
+                goExp preScope e,
+                goBlock preScope po,
+                goBlock preScope b
+              ]
+       in (used, scope)
+    goStmt scope (YExp e) = (goExp scope e, scope)
+    goStmt scope _ = (Set.empty, scope)
+
+    goExp :: Set.Set Name -> YulExp -> Set.Set Name
+    goExp scope (YIdent n) = freeOf scope [n]
+    goExp scope (YCall _ args) = Set.unions (map (goExp scope) args)
+    goExp _ _ = Set.empty
+
+    freeOf :: Set.Set Name -> [Name] -> Set.Set Name
+    freeOf scope = Set.fromList . filter (`Set.notMember` scope)
+
+    blockDecls :: [YulStmt] -> Set.Set Name
+    blockDecls = foldr addDecl Set.empty
+      where
+        addDecl (YLet names _) s = Set.fromList names `Set.union` s
+        addDecl (YFun f _ _ _) s = Set.insert f s
+        addDecl _ s = s
 
 -----------------------------------------------------------------------
 -- Yul AST Renaming
