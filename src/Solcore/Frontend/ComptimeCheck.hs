@@ -18,9 +18,18 @@ module Solcore.Frontend.ComptimeCheck (checkComptimeEarly) where
      - A 'let x : comptime T = e' binding where e classifies as CTRuntime.
 
    CTDeferred values are never rejected here; the MAST-level pass handles them.
+
+   Separately, an assembly block may not assign (via Yul ':=') to a variable
+   that is erased before Hull emission — an explicitly 'comptime' parameter or
+   let, or a comptime-only-typed (string / integer) one.  Such a variable has no
+   runtime representation, so an asm assignment to it would leave a dangling
+   identifier in the generated Yul.  This must be caught here, on the typed AST,
+   because the declaration is gone by the time the MAST-level pass runs.
 -}
 
 import Data.Map qualified as Map
+import Data.Set qualified as Set
+import Language.Yul (YulBlock, YulStmt (..))
 import Solcore.Frontend.Syntax.Contract
 import Solcore.Frontend.Syntax.Name (Name)
 import Solcore.Frontend.Syntax.Stmt
@@ -88,7 +97,9 @@ checkContrDecl _ _ = Right ()
 -----------------------------------------------------------------------
 
 checkFunDef :: SigTable -> String -> FunDef Id -> Either String ()
-checkFunDef st ctx fd = checkBody st (effRetComptime sig) ctx initEnv (funDefBody fd)
+checkFunDef st ctx fd = do
+  checkBody st (effRetComptime sig) ctx initEnv (funDefBody fd)
+  checkNoAsmComptimeAssign ctx (erasableNames sig (funDefBody fd)) (funDefBody fd)
   where
     sig = funSignature fd
     -- For '-> comptime' functions, treat ALL params as CTComptime when checking
@@ -282,3 +293,89 @@ classifyCall st env f args =
 when_ :: Bool -> String -> Either String ()
 when_ True msg = Left msg
 when_ False _ = Right ()
+
+-----------------------------------------------------------------------
+-- Assembly may not assign to an erased (comptime) variable
+-----------------------------------------------------------------------
+
+-- | Names of variables in a function that are erased before Hull emission:
+--   explicitly-comptime or comptime-only-typed parameters, and likewise-declared
+--   lets anywhere in the body.  Assigning any of these inside an asm block leaves
+--   a dangling Yul identifier.
+erasableNames :: Signature Id -> Body Id -> Set.Set Name
+erasableNames sig body =
+  Set.fromList [idName (paramName p) | p <- sigParams sig, paramErasable p]
+    `Set.union` bodyErasableLets body
+
+paramErasable :: Param Id -> Bool
+paramErasable (Typed ct _ ty) = ct || isComptimeOnlyTy ty
+paramErasable (Untyped ct _) = ct
+
+bodyErasableLets :: Body Id -> Set.Set Name
+bodyErasableLets = foldMap stmtErasableLets
+
+stmtErasableLets :: Stmt Id -> Set.Set Name
+stmtErasableLets (Let ct x mty _)
+  | ct || maybe False isComptimeOnlyTy mty = Set.singleton (idName x)
+  | otherwise = Set.empty
+stmtErasableLets (Match _ eqs) = foldMap (bodyErasableLets . snd) eqs
+stmtErasableLets (If _ t f) = bodyErasableLets t `Set.union` bodyErasableLets f
+stmtErasableLets (For i _ p b) =
+  stmtErasableLets i `Set.union` stmtErasableLets p `Set.union` bodyErasableLets b
+stmtErasableLets (Block b) = bodyErasableLets b
+stmtErasableLets _ = Set.empty
+
+-- | Reject any asm block that assigns to an erased (comptime) variable.
+checkNoAsmComptimeAssign :: String -> Set.Set Name -> Body Id -> Either String ()
+checkNoAsmComptimeAssign ctx erasable = mapM_ goStmt
+  where
+    goStmt (Asm blk) =
+      case filter (`Set.member` erasable) (asmExternalAssignTargets blk) of
+        (n : _) ->
+          Left $
+            ctx
+              ++ ": assembly block assigns to comptime variable '"
+              ++ show n
+              ++ "', which has no runtime representation"
+        [] -> Right ()
+    goStmt (Match _ eqs) = mapM_ (checkNoAsmComptimeAssign ctx erasable . snd) eqs
+    goStmt (If _ t f) =
+      checkNoAsmComptimeAssign ctx erasable t
+        >> checkNoAsmComptimeAssign ctx erasable f
+    goStmt (For i _ p b) =
+      goStmt i >> goStmt p >> checkNoAsmComptimeAssign ctx erasable b
+    goStmt (Block b) = checkNoAsmComptimeAssign ctx erasable b
+    goStmt _ = Right ()
+
+-- | Names assigned to (Yul ':=') in an asm block that are NOT Yul-local (declared
+--   by a 'let' inside the block).  A block-local shadows an outer variable, so
+--   assigning it is not an assignment to the erased outer one.
+asmExternalAssignTargets :: YulBlock -> [Name]
+asmExternalAssignTargets blk =
+  [n | n <- yulAssignTargets blk, not (n `Set.member` locals)]
+  where
+    locals = Set.fromList (yulLetNames blk)
+
+yulAssignTargets :: YulBlock -> [Name]
+yulAssignTargets = concatMap go
+  where
+    go (YAssign names _) = names
+    go (YIf _ b) = yulAssignTargets b
+    go (YBlock b) = yulAssignTargets b
+    go (YFor pre _ post body) = yulAssignTargets (pre ++ post ++ body)
+    go (YSwitch _ cases def) =
+      concatMap (yulAssignTargets . snd) cases ++ maybe [] yulAssignTargets def
+    go (YFun {}) = [] -- nested Yul function: its own scope
+    go _ = []
+
+yulLetNames :: YulBlock -> [Name]
+yulLetNames = concatMap go
+  where
+    go (YLet names _) = names
+    go (YIf _ b) = yulLetNames b
+    go (YBlock b) = yulLetNames b
+    go (YFor pre _ post body) = yulLetNames (pre ++ post ++ body)
+    go (YSwitch _ cases def) =
+      concatMap (yulLetNames . snd) cases ++ maybe [] yulLetNames def
+    go (YFun {}) = []
+    go _ = []

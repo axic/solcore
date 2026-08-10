@@ -1,0 +1,23 @@
+/* Positive (R3.N3): a comptime value referenced inside an assembly block in a
+   loop body must be substituted in.  `step`'s comptime let is folded away by
+   MastEval, so the loop-body asm reference to it must be inlined here or it
+   would dangle in the generated Yul.  The loop accumulates into memory (not a
+   known Mast variable), so nothing stale is constant-folded into the block.
+*/
+import std.{lt,Ord,Add,Sub,Bounded,Num,Eq,Typedef};
+
+contract ComptimeLoopAsm {
+  public function main() -> word {
+    let step : comptime word = 42;
+    for (let i : word = 0; i < 3; i = i + 1) {
+      assembly {
+        mstore(0, add(mload(0), step))
+      }
+    }
+    let r : word;
+    assembly {
+      r := mload(0)
+    }
+    return r;
+  }
+}

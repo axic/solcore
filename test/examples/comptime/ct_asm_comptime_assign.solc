@@ -1,0 +1,15 @@
+/* Negative (R3.N4): an assembly block assigns to a comptime-declared variable.
+   `x`'s comptime let is folded away before Hull emission, so the asm assignment
+   `x := sload(0)` would leave a dangling identifier in the generated Yul.
+   No later pass can see the erased declaration, so the early comptime verifier
+   must reject this.
+*/
+contract ComptimeAsmAssign {
+  function main() -> word {
+    let x : comptime word = 5;
+    assembly {
+      x := sload(0)
+    }
+    return x;
+  }
+}

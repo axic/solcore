@@ -349,12 +349,10 @@ evalStmt tyReg env stmt = case stmt of
     -- Remove any variables assigned in the loop from the environment to
     -- prevent stale pre-loop values from being constant-propagated into
     -- the loop body (e.g. `s := 0` before the loop must not replace `s`
-    -- inside the body where `s` is being updated).
-    let assigned =
-          assignedInStmt initStmt
-            `Set.union` assignedInStmt post
-            `Set.union` foldMap assignedInStmt body
-        loopEnv = foldr Map.delete env (Set.toList assigned)
+    -- inside the body where `s` is being updated).  This covers assembly
+    -- assignments too, so a value an asm block mutates each iteration is not
+    -- substituted into the loop-body asm (see evalLoopStmt's MastAsm case).
+    let loopEnv = clearLoopMutations initStmt post body env
     (_, initStmt') <- evalLoopStmt loopEnv initStmt
     cond' <- evalExp loopEnv cond
     (_, post') <- evalLoopStmt loopEnv post
@@ -392,12 +390,25 @@ evalLoopStmt env st = case st of
         env' = foldr Map.delete env (Set.toList mutated)
     pure (env', MastMatch e' alts')
   MastFor initStmt cond post body -> do
-    (_, initStmt') <- evalLoopStmt env initStmt
-    cond' <- evalExp env cond
-    (_, post') <- evalLoopStmt env post
-    bodies' <- mapM (fmap snd . evalLoopStmt env) body
+    let loopEnv = clearLoopMutations initStmt post body env
+    (_, initStmt') <- evalLoopStmt loopEnv initStmt
+    cond' <- evalExp loopEnv cond
+    (_, post') <- evalLoopStmt loopEnv post
+    bodies' <- mapM (fmap snd . evalLoopStmt loopEnv) body
     pure (Map.empty, MastFor initStmt' cond' post' bodies')
-  MastAsm yul -> pure (Map.empty, MastAsm yul)
+  MastAsm yul -> do
+    -- Substitute known comptime values into the block, exactly as evalStmt does
+    -- for top-level asm: comptime lets with known values are eliminated from the
+    -- statement list, so any asm reference to them must be inlined here or it
+    -- becomes a dangling identifier.  'env' already excludes every variable the
+    -- enclosing loop mutates (clearLoopMutations covers assembly assignments), so
+    -- a live accumulator is left as an identifier rather than replaced by its
+    -- stale pre-loop value.  For the same reason the remaining bindings are known
+    -- to be loop-invariant, so we keep 'env' rather than clearing it, letting a
+    -- later asm block in the same body substitute them too.
+    let subst = venvToSubst env
+        yul' = substYulBlock subst yul
+    pure (env, MastAsm yul')
   MastBreak -> pure (env, MastBreak)
   MastContinue -> pure (env, MastContinue)
   MastSeq stmts -> do
@@ -436,6 +447,53 @@ assignedInStmt (MastFor initStmt _ post body) =
     `Set.union` foldMap assignedInStmt body
 assignedInStmt (MastSeq stmts) = foldMap assignedInStmt stmts
 assignedInStmt _ = Set.empty
+
+-- Collect variable names assigned inside assembly blocks (via Yul ':=') in a
+-- statement.  Recurses into match arms, nested loops, and seqs.  Used, together
+-- with assignedInStmt, to invalidate env entries for variables a loop mutates
+-- through assembly so their stale pre-loop values are neither constant-propagated
+-- nor substituted into loop-body asm.
+asmAssignedInStmt :: MastStmt -> Set.Set Name
+asmAssignedInStmt (MastAsm yul) = Set.fromList (yulAssignedNames yul)
+asmAssignedInStmt (MastMatch _ alts) = foldMap (foldMap asmAssignedInStmt . snd) alts
+asmAssignedInStmt (MastFor initStmt _ post body) =
+  asmAssignedInStmt initStmt
+    `Set.union` asmAssignedInStmt post
+    `Set.union` foldMap asmAssignedInStmt body
+asmAssignedInStmt (MastSeq stmts) = foldMap asmAssignedInStmt stmts
+asmAssignedInStmt _ = Set.empty
+
+-- Names assigned to (Yul ':=') anywhere in a Yul block, ignoring nested Yul
+-- function bodies, which have their own scope.  Over-approximating is safe here:
+-- it only makes loop evaluation more conservative (fewer substitutions).
+yulAssignedNames :: [YulStmt] -> [Name]
+yulAssignedNames = concatMap go
+  where
+    go (YAssign names _) = names
+    go (YIf _ blk) = yulAssignedNames blk
+    go (YBlock stmts) = yulAssignedNames stmts
+    go (YFor pre _ post body) = yulAssignedNames (pre ++ post ++ body)
+    go (YSwitch _ cases def) =
+      concatMap (yulAssignedNames . snd) cases ++ maybe [] yulAssignedNames def
+    go (YFun {}) = []
+    go _ = []
+
+-- Remove from the environment every variable a loop mutates, whether via a plain
+-- assignment (assignedInStmt) or inside an assembly block (asmAssignedInStmt), so
+-- the loop body is evaluated without stale pre-loop values for those variables.
+clearLoopMutations :: MastStmt -> MastStmt -> [MastStmt] -> VEnv -> VEnv
+clearLoopMutations initStmt post body env =
+  Map.filterWithKey (\k _ -> not (mastIdName k `Set.member` asmNames)) byId
+  where
+    byId = foldr Map.delete env (Set.toList assignedIds)
+    assignedIds =
+      assignedInStmt initStmt
+        `Set.union` assignedInStmt post
+        `Set.union` foldMap assignedInStmt body
+    asmNames =
+      asmAssignedInStmt initStmt
+        `Set.union` asmAssignedInStmt post
+        `Set.union` foldMap asmAssignedInStmt body
 
 -----------------------------------------------------------------------
 -- Evaluate expressions

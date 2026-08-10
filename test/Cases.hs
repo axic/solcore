@@ -45,6 +45,7 @@ comptime =
       runTestForFile "fib2.solc" comptimeFolder,
       runTestForFile "fib3.solc" comptimeFolder,
       runTestForFile "ct_asm_mem.solc" comptimeFolder,
+      runTestForFile "ct_loop_asm.solc" comptimeFolder,
       runTestForFile "integer-basic.solc" comptimeFolder,
       runTestForFile "integer-fib.solc" comptimeFolder,
       runTestForFile "integer-from-integer.solc" comptimeFolder,
@@ -70,6 +71,7 @@ comptime =
       runTestExpectingFailure "ct_runtime_arg.solc" comptimeFolder,
       runTestExpectingFailure "ct_let_runtime.solc" comptimeFolder,
       runTestExpectingFailure "ct_asm_ret.solc" comptimeFolder,
+      runTestExpectingFailure "ct_asm_comptime_assign.solc" comptimeFolder,
       runTestExpectingFailure "ct_overloaded_bad.solc" comptimeFolder,
       runTestExpectingFailure "string-mem-runtime-fail.solc" comptimeFolder
     ]
