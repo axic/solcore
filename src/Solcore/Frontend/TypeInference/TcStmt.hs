@@ -1833,10 +1833,23 @@ tcYulStmt (YComment _) = pure ([], unit)
 -- 'pair' of words (see 'tcYulStmt (YFun ...)'), so unfold the pair spine to
 -- recover the true arity. Compare this against the number of names on the
 -- left-hand side of an assignment.
+--
+-- This MUST agree with the Hull backend's 'returnCount' (Language.Hull.TcEnv),
+-- which re-checks the same Yul assignments after lowering: a shape that counts
+-- as N here must count as N there. The one shape unique to the frontend is an
+-- unresolved type variable, produced only by the polymorphic terminators
+-- 'stop'/'invalid'/'selfdestruct'/'return'/'revert' (see 'yulPrimOps'): they
+-- never return control, so they push no Yul values and their arity is 0. The
+-- Hull backend lowers every terminator to 'TUnit' ('returnCount' = 0), so it
+-- must be 0 here too — the old fall-through counted it as 1, which let
+-- 'x := stop()' pass this check while Hull's 'checkAsmStmt' rejected it as a
+-- 0-vs-1 mismatch.
 yulReturnArity :: Ty -> Int
 yulReturnArity t
   | t == unit = 0
   | otherwise = case t of
+      Meta _ -> 0
+      TyVar _ -> 0
       TyCon (Name "pair") [_, t2] -> 1 + yulReturnArity t2
       _ -> 1
 

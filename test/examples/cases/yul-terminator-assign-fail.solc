@@ -1,0 +1,15 @@
+// A terminator (stop/invalid/selfdestruct/return/revert) never returns control
+// and pushes no Yul values, so it produces 0 values and cannot stand on the RHS
+// of an assignment. The frontend arity check ('yulReturnArity') must report the
+// 0-vs-1 mismatch here, agreeing with the Hull backend (which lowers 'stop' to
+// 'TUnit', 'returnCount' = 0). Regression for the polymorphic-terminator result
+// leaking through as arity 1.
+contract YulTerminatorAssignBad {
+  public function main() -> word {
+    let x : word;
+    assembly {
+      x := stop()
+    }
+    return x;
+  }
+}
