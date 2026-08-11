@@ -348,8 +348,8 @@ tcDataDecl (DataTy n vs cs ds) =
   (\cs' -> DataTy n vs cs' ds) <$> mapM tcConstr cs
 
 tcConstr :: Constr -> TcM Constr
-tcConstr (Constr n ts) =
-  Constr n <$> mapM kindCheck ts
+tcConstr (Constr n ts fields) =
+  (\ts' -> Constr n ts' fields) <$> mapM kindCheck ts
 
 -- type checking fields
 

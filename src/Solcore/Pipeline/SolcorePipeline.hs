@@ -25,6 +25,7 @@ import Solcore.Desugarer.DecisionTreeCompiler (matchCompiler, warningDiagnostic)
 import Solcore.Desugarer.DeriveClasses (deriveClassTopDecls)
 import Solcore.Desugarer.DeriveGeneric (collectDataDefs, deriveGenericTopDecls)
 import Solcore.Desugarer.FieldAccess (fieldDesugarTopDecls)
+import Solcore.Desugarer.StructProjection (structProjectionTopDecls)
 import Solcore.Desugarer.IfDesugarer (ifDesugarer)
 import Solcore.Desugarer.IndirectCall (indirectCallTopDecls)
 import Solcore.Desugarer.IntLiteralDesugar (desugarIntLiterals)
@@ -884,12 +885,22 @@ prepareInferenceDeclsForTypeInference opts emitOutput imps inferenceDecls = do
     putStrLn "> Generic instance derivation:"
     putStrLn $ prettyInferenceDecls derived
 
+  -- Struct field-projection generation: one positional projection function per
+  -- named field of a `struct` (single-constructor product), so dot-notation
+  -- access `s.x` can be lowered to a call during type checking.
+  let projected =
+        mapModuleInferenceTopDecls (structProjectionTopDecls localData) derived
+
+  liftIO $ when verbose $ do
+    putStrLn "> Struct field-projection generation:"
+    putStrLn $ prettyInferenceDecls projected
+
   -- Class instance derivation from `deriving (...)` clauses
   derivedClasses <-
     ExceptT $
       fmap (first compilerErrorFromString) $
         runExceptT $
-          traverseModuleInferenceTopDecls (ExceptT . pure . deriveClassTopDecls localData) derived
+          traverseModuleInferenceTopDecls (ExceptT . pure . deriveClassTopDecls localData) projected
 
   liftIO $ when verbose $ do
     putStrLn "> Class instance derivation:"

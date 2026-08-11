@@ -1628,8 +1628,8 @@ renameDataTyTypeRefs renameMap (DataTy n vs cs ds) =
     ds
 
 renameConstrTypeRefs :: Map Name Name -> Constr -> Constr
-renameConstrTypeRefs renameMap (Constr n tys) =
-  Constr (renameConstrNameTypeRefs renameMap n) (map (renameTyTypeRefs renameMap) tys)
+renameConstrTypeRefs renameMap (Constr n tys fields) =
+  Constr (renameConstrNameTypeRefs renameMap n) (map (renameTyTypeRefs renameMap) tys) fields
 
 renameConstrNameTypeRefs :: Map Name Name -> Name -> Name
 renameConstrNameTypeRefs renameMap qn@(QualName q n) =
