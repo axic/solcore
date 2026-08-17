@@ -2011,31 +2011,34 @@ forall cxt fieldSelector loadType offsetType storageType
     }
 }
 
-// TODO: structures other than contract context
-/*
-forall structType fieldSelector fieldType storageType offsetType
+// Member access into a struct held in storage: the base is the struct's own
+// storage handle, and the field lives `StorageSize(offsetType)` slots further in
+// (offsetType encodes the preceding fields). Only that field's slot(s) are
+// touched — no whole-struct load/store. Mirrors the contract-field instances
+// above, with the base slot coming from the struct handle instead of slot 0.
+
+forall structType fieldSelector fieldType offsetType
   . StructField(structType, fieldSelector):CStructField(fieldType, offsetType)
   , offsetType:StorageSize
   => instance MemberAccessProxy(storage(structType), fieldSelector, fieldType,  offsetType):LVA(storage(fieldType)) {
     function acc(x:MemberAccessProxy(storage(structType), fieldSelector, fieldType,  offsetType)) -> storage(fieldType) {
         let ptr:word = Typedef.rep(memberAccessBase(x));
         let size:word = StorageSize.size(Proxy:Proxy(offsetType));
-        return storage(ptr + size);
+        return storage(ptr + size):storage(fieldType);
     }
 }
 
-forall structType fieldSelector fieldType storageType offsetType
+forall structType fieldSelector fieldType offsetType loadType
   . StructField(structType, fieldSelector):CStructField(fieldType, offsetType)
   , offsetType:StorageSize
-  , fieldType:StorageType
-  => instance MemberAccessProxy(storage(structType), fieldSelector, fieldType,  offsetType):RVA(fieldType) {
-    function acc(x:MemberAccessProxy(storage(structType), fieldSelector, fieldType,  offsetType)) -> fieldType {
+  , storage(fieldType):CanStore(loadType)
+  => instance MemberAccessProxy(storage(structType), fieldSelector, fieldType,  offsetType):RVA(loadType) {
+    function acc(x:MemberAccessProxy(storage(structType), fieldSelector, fieldType,  offsetType)) -> loadType {
         let ptr:word = Typedef.rep(memberAccessBase(x));
         let size:word = StorageSize.size(Proxy:Proxy(offsetType));
-        return CanStore.load(ptr + size);
+        return CanStore.load(storage(ptr + size):storage(fieldType)):loadType;
     }
 }
-*/
 
 
 
